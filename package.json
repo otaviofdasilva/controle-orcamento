@@ -1,0 +1,30 @@
+{
+  "name": "controle-orcamento",
+  "version": "0.1.0",
+  "description": "desafio backend alura",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/otaviofdasilva/controle-orcamento.git"
+  },
+  "keywords": [
+    "desafio",
+    "rest",
+    "api"
+  ],
+  "author": "otavio francisco da silva",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/otaviofdasilva/controle-orcamento/issues"
+  },
+  "homepage": "https://github.com/otaviofdasilva/controle-orcamento#readme",
+  "devDependencies": {
+    "jest": "^27.4.7"
+  },
+  "dependencies": {
+    "mysql2": "^2.3.3"
+  }
+}
