@@ -175,14 +175,6 @@ it("cadastraReceita não deve aceitar descrição vazia", async function () {
 
 });
 
-it("cadastraReceita não deve aceitar descrição vazia", async function () {
-
-    const r1 = await m.cadastraReceita({ descricao: "" });
-    expect(r1.descricao.valido).to.equal(false);
-    expect(r1.descricao.valor).to.equal("");
-
-});
-
 it("cadastraReceita não deve aceitar data que não seja instanceof Date", async function () {
 
     const r1 = await m.cadastraReceita({ data: "2020-01-01" });
