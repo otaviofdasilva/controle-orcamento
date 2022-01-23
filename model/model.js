@@ -40,7 +40,7 @@ function valida({ data, descricao, valor, }, ...vs) {
 export default class Model {
 
     constructor(pool) {
-        this.pool   = pool;
+        this.pool = pool;
     }
 
     async destroiTabela() {
@@ -89,10 +89,18 @@ export default class Model {
 
     async selecionaReceita({ id } = {}) {
         const { pool, } = this;
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
-                       : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`)
+        const [r]       = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
+                             : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`)
 
-        return id ? r[0] : r;
+        if (id) {
+            const { frequencia , ...dados } = r[0];
+            return dados;
+        } else {
+            return r.map(function ({ frequencia , ...dados }) {
+                return dados;
+            });
+        }
+
     }
 
     async atualizaDespesa({ id, ...info }) {

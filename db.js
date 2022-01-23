@@ -13,6 +13,7 @@ async function fechaPool() {
     console.log("encerrando pool de conexões.");
     await pool.end();
     console.log("pool encerrado.");
+    process.exit(1);
 }
 
 process.on("SIGINT", fechaPool);
