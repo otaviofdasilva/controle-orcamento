@@ -4,8 +4,7 @@
   "description": "desafio backend alura",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/otaviofdasilva/controle-orcamento.git"
@@ -26,5 +25,7 @@
     "mysql2": "^2.3.3"
   },
   "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.2.0"
   }
 }
