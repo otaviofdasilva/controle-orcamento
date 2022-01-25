@@ -4,7 +4,9 @@
   "description": "desafio backend alura",
   "main": "index.js",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "test": "mocha --timeout 5000"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/otaviofdasilva/controle-orcamento.git"

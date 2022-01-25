@@ -69,6 +69,7 @@ export default class Model {
                                 data       date NOT NULL,
                                 tipo       enum('DESPESA', 'RECEITA') NOT NULL,
                                 frequencia enum('FIXA','EVENTUAL') DEFAULT NULL,
+                                categoria  enum('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS') default 'OUTRAS',
                                 PRIMARY KEY  (id)
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`
 
