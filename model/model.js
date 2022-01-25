@@ -85,7 +85,8 @@ export default class Model {
         const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
                        : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`)
 
-        return id ? r[0] : r;
+        const d = r[0] ? r[0] : null;
+        return id ? d : r;
     }
 
     async selecionaReceita({ id } = {}) {
@@ -94,11 +95,15 @@ export default class Model {
                              : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`)
 
         if (id) {
-            const { frequencia , ...dados } = r[0];
-            return dados;
+            if (r[0]) {
+                const { id, descricao, valor, data, frequencia, ..._ } = r[0];
+                return { id, descricao, valor, data };
+            }
+
+            return null;
         } else {
-            return r.map(function ({ frequencia , ...dados }) {
-                return dados;
+            return r.map(function ({ id, descricao, valor, data, frequencia }) {
+                return { id, descricao, valor, data };
             });
         }
 
