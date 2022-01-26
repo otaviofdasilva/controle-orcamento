@@ -136,6 +136,17 @@ it("selecionaDespesa com argumento com id deve retornar a despesa de id correspo
 
 });
 
+it("selecionaDespesa com argumento com descricao deve retornar um array de despesas que contenham esta descricao", async function () {
+
+    await m.cadastraDespesa({ data: new Date(), descricao: "um teste",    valor: 1 });
+    await m.cadastraDespesa({ data: new Date(), descricao: "outro teste", valor: 400 });
+    await m.cadastraDespesa({ data: new Date(), descricao: "...",         valor: 20 });
+    const despesas = await m.selecionaDespesa({ descricao: "teste" });
+    expect(despesas).to.be.lengthOf(2); 
+    expect(despesas.map(d => d.descricao)).deep.to.equal(["um teste", "outro teste"]); 
+
+});
+
 it("removeDespesa deve retornar true e remover registro quando existir movimentação correspondente ao id informado", async function () {
 
     const mov      = { data: new Date(), descricao: "teste", valor: 1 };

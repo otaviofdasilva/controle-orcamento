@@ -80,16 +80,22 @@ export default class Model {
         }
     }
 
-    async selecionaDespesa({ id } = {}) {
-        const { pool, } = this;
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
-                       : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`)
+    async selecionaDespesa({ descricao, id } = {}) {
 
-        const d = r[0] ? r[0] : null;
-        return id ? d : r;
+        const { pool, } = this;
+
+        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
+                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND descricao RLIKE ?`, descricao)
+                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`)
+        if (id) {
+            return r[0] ? r[0] : null;
+        } else {
+            return r;
+        }
+
     }
 
-    async selecionaReceita({ id, descricao } = {}) {
+    async selecionaReceita({ descricao, id } = {}) {
         const { pool, } = this;
 
         const [r]       = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
