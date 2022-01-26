@@ -20,9 +20,10 @@ export default async function routes(app) {
     });
 
     app.get("/controle-orcamento/api/receitas/:id?", async function(request, response) {
-        const id = parseInt(request.params.id);
+        const id        = parseInt(request.params.id);
+        const descricao = request.query.descricao;
         try {
-            const r = await m.selecionaReceita({ id });
+            const r = await m.selecionaReceita({ id, descricao });
             response.json(r);
         } catch (e) {
             console.error(e);

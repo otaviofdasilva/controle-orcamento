@@ -200,6 +200,16 @@ it("selecionaReceita sem argumento deve retornar um array com todas as receitas 
 
 });
 
+it("selecionaReceita com argumento com descricao deve retornar um array de receitas que contenham esta descricao", async function () {
+
+    await m.cadastraReceita({ data: new Date(), descricao: "um teste",    valor: 1 });
+    await m.cadastraReceita({ data: new Date(), descricao: "outro teste", valor: 400 });
+    await m.cadastraReceita({ data: new Date(), descricao: "...",         valor: 20 });
+    const receitas = await m.selecionaReceita({ descricao: "teste" });
+    expect(receitas).to.be.lengthOf(2); 
+    expect(receitas.map(r => r.descricao)).deep.to.equal(["um teste", "outro teste"]); 
+});
+
 it("selecionaReceita com argumento com id deve retornar a receita de id correspondente", async function () {
 
     const mov = { data: new Date(), descricao: "teste", valor: 1 };

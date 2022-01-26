@@ -89,10 +89,12 @@ export default class Model {
         return id ? d : r;
     }
 
-    async selecionaReceita({ id } = {}) {
+    async selecionaReceita({ id, descricao } = {}) {
         const { pool, } = this;
+
         const [r]       = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
-                             : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`)
+                             : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao RLIKE ?`, descricao)
+                                         : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
 
         if (id) {
             if (r[0]) {
