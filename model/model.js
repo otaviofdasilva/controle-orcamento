@@ -80,6 +80,18 @@ export default class Model {
         }
     }
 
+    async selecionaDespesaPeriodo({ ano, mes }) {
+
+        const { pool, } = this;
+
+        const [r] = await pool.query(`SELECT *
+                                      FROM   movimentacao 
+                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ ano, mes ]);
+
+        return r;
+
+    }
+
     async selecionaDespesa({ descricao, id } = {}) {
 
         const { pool, } = this;

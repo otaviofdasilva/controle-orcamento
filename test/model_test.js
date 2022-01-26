@@ -147,6 +147,19 @@ it("selecionaDespesa com argumento com descricao deve retornar um array de despe
 
 });
 
+it("selecionaDespesaPeriodo deve retornar um array de despesas do mes e ano passados como argumentos", async function () {
+
+    await m.cadastraDespesa({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
+    await m.cadastraDespesa({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
+    await m.cadastraDespesa({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
+
+    const despesas = await m.selecionaDespesaPeriodo({ ano: 2020, mes: 2 });
+
+    expect(despesas).to.be.lengthOf(2); 
+    expect(new Set(despesas.map(d => d.descricao))).deep.to.equal(new Set(["um teste", "outro teste"])); 
+
+});
+
 it("removeDespesa deve retornar true e remover registro quando existir movimentação correspondente ao id informado", async function () {
 
     const mov      = { data: new Date(), descricao: "teste", valor: 1 };
