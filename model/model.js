@@ -1,5 +1,16 @@
-import { FIXA,    EVENTUAL } from "./frequencia.js";
-import { DESPESA, RECEITA, } from "./tipo.js";
+import { categorias, OUTRAS }   from "./categoria.js";
+import { FIXA,       EVENTUAL } from "./frequencia.js";
+import { DESPESA,    RECEITA, } from "./tipo.js";
+
+const GASTOS = { ALIMENTACAO: 0
+               , EDUCACAO:    0
+               , IMPREVISTOS: 0
+               , LAZER:       0
+               , MORADIA:     0
+               , OUTRAS:      0
+               , SAUDE:       0
+               , TRANSPORTE:  0
+               };
 
 
 function valida({ data, descricao, valor, }, ...vs) {
@@ -129,6 +140,19 @@ export default class Model {
 
     }
 
+    async selecionaReceitaPeriodo({ ano, mes }) {
+
+        const { pool } = this;
+
+        const [r] = await pool.query(`SELECT *
+                                      FROM   movimentacao 
+                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'RECEITA'`, [ ano, mes ]);
+
+        return r;
+
+    }
+
+
     async atualizaDespesa({ id, ...info }) {
 
         if (!id) return false;
@@ -196,16 +220,23 @@ export default class Model {
         return { id: r.insertId };
     }
 
-    async cadastraDespesa({ data, descricao, frequencia, valor } = { frequencia: EVENTUAL }) {
+    async cadastraDespesa({ categoria, data, descricao, frequencia, valor } = { frequencia: EVENTUAL }) {
 
         const f = frequencia || EVENTUAL;
+        const c = categoria  || OUTRAS;
+        const categoriaInvalida  = { campo:  "categoria"
+                                   , erro:   `categoria não possui valor correto: ${categorias.join(" | ")}`
+                                   , valido: categorias.includes(c)
+                                   , valor:  c
+                                   };
+
         const frequenciaInvalida = { campo:  "frequencia"
                                    , erro:   "frequência não possui valor correto: FIXA | EVENTUAL "
                                    , valido: f === FIXA || f === EVENTUAL
                                    , valor:  f
                                    };
 
-        const erros = valida({ data, descricao, valor }, frequenciaInvalida);
+        const erros = valida({ data, descricao, valor }, frequenciaInvalida, categoriaInvalida);
 
         if (erros) return erros;
 
@@ -213,7 +244,8 @@ export default class Model {
         const pool = this.pool;
 
         const [r]  = await pool.query(`INSERT INTO movimentacao SET ?`
-                                     , { data
+                                     , { categoria
+                                       , data
                                        , descricao
                                        , tipo
                                        , valor
@@ -222,5 +254,44 @@ export default class Model {
 
         return { id: r.insertId };
     }
+
+    async resumoMovimentacao({ ano, mes }) {
+
+        const pool = this.pool;
+
+         const [r]  = await pool.query(`
+                                       (SELECT 'receitas' detalhes, SUM(valor) total 
+                                        FROM movimentacao 
+                                        WHERE tipo = 'RECEITA' AND year(data) = ? AND month(data) = ?) 
+                                        UNION 
+                                       (SELECT categoria, SUM(valor) total 
+                                        FROM movimentacao 
+                                        WHERE tipo = 'DESPESA' AND year(data) = ? AND month(data) = ?
+                                        GROUP BY categoria)
+                                      `
+                                     , [ ano
+                                       , mes
+                                       , ano
+                                       , mes
+                                       ]);
+
+
+        const [{ total: totalReceitas } ,...gastos] = r;
+        const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
+        const detalhamento  = gastos.reduce((o, { detalhes, total}) => ({ ...o, [detalhes]: total }), {});
+
+        const resumo = { despesas: { ...GASTOS
+                                   , ...detalhamento
+                                   }
+                       , saldo: totalReceitas - totalDespesas
+                       , totalReceitas
+                       , totalDespesas
+                       };
+
+        return resumo;
+
+    }
+
 }
+
 

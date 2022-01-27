@@ -19,6 +19,19 @@ export default async function routes(app) {
         }
     });
 
+    app.get("/controle-orcamento/api/receitas/:ano/:mes", async function(request, response) {
+        const { ano, mes } = request.params;
+
+        try {
+            const r = await m.selecionaReceitaPeriodo({ ano: parseInt(ano), mes: parseInt(mes) });
+            response.json(r);
+        } catch (e) {
+            console.error(e);
+            response.sendStatus(500);
+        }
+
+    });
+
     app.get("/controle-orcamento/api/receitas/:id?", async function(request, response) {
         const id        = parseInt(request.params.id);
         const descricao = request.query.descricao;

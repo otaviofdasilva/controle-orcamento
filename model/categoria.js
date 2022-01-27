@@ -1,10 +1,20 @@
 const ALIMENTACAO = "ALIMENTACAO"; 
-const SAUDE = "SAUDE"; 
-const MORADIA = "MORADIA"; 
-const TRANSPORTE = "TRANSPORTE"; 
-const EDUCACAO = "EDUCACAO"; 
-const LAZER = "LAZER"; 
+const EDUCACAO    = "EDUCACAO"; 
 const IMPREVISTOS = "IMPREVISTOS"; 
-const OUTRAS = "OUTRAS";
+const LAZER       = "LAZER"; 
+const MORADIA     = "MORADIA"; 
+const OUTRAS      = "OUTRAS";
+const SAUDE       = "SAUDE"; 
+const TRANSPORTE  = "TRANSPORTE"; 
 
-export { ALIMENTACAO, SAUDE, MORADIA, TRANSPORTE, EDUCACAO, LAZER, IMPREVISTOS, OUTRAS }
+const categorias = [ ALIMENTACAO
+                   , EDUCACAO
+                   , IMPREVISTOS
+                   , LAZER
+                   , MORADIA
+                   , OUTRAS
+                   , SAUDE
+                   , TRANSPORTE
+                   ];
+
+export { ALIMENTACAO, SAUDE, MORADIA, TRANSPORTE, EDUCACAO, LAZER, IMPREVISTOS, OUTRAS, categorias }

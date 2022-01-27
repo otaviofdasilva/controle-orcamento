@@ -1,5 +1,18 @@
 import { expect }         from "chai";
-import { EVENTUAL, FIXA } from "../model/frequencia.js";
+import { EVENTUAL
+       , FIXA 
+       }                  from "../model/frequencia.js";
+
+import { ALIMENTACAO
+       , EDUCACAO
+       , IMPREVISTOS
+       , LAZER
+       , MORADIA
+       , OUTRAS
+       , SAUDE
+       , TRANSPORTE
+       , categorias
+       }                  from "../model/categoria.js";
 
 import Model              from "../model/model.js";
 import pool               from "../db.js";
@@ -83,16 +96,26 @@ it("cadastraDespesa não deve aceitar data que não seja instanceof Date", async
 
 });
 
-it("cadastraDespesa não deve aceitar frequencia que seja diferente de FIXA | EVENTUAL ", async function () {
-
-    const r1 = await m.cadastraDespesa({ frequencia: "foobar" });
-    expect(r1.frequencia.valido).to.equal(false);
+it("cadastraDespesa não deve aceitar frequencia que seja diferente de FIXA | EVENTUAL", async function () {
+    const r = await m.cadastraDespesa({ frequencia: "foobar" });
+    expect(r.frequencia.valido).to.equal(false);
 
     const r2 = await m.cadastraDespesa({ frequencia: FIXA });
     expect(r2.frequencia).to.be.undefined;
 
     const r3 = await m.cadastraDespesa({ frequencia: EVENTUAL });
     expect(r3.frequencia).to.be.undefined;
+});
+
+it("cadastraDespesa não deve aceitar categoria que seja diferente de ALIMENTACAO | SAUDE | MORADIA | TRANSPORTE | EDUCACAO | LAZER | IMPREVISTOS | OUTRAS", async function () {
+
+    const r = await m.cadastraDespesa({ categoria: "foobar" });
+    expect(r.categoria.valido).to.equal(false);
+
+    categorias.forEach(async function (categoria) {
+        const r = await m.cadastraDespesa({ categoria });
+        expect(r.categoria).to.be.undefined;
+    });
 
 });
 
@@ -248,6 +271,19 @@ it("selecionaReceita com argumento com id deve retornar a receita de id correspo
 
 });
 
+it("selecionaReceitaPeriodo deve retornar um array de receitas do mes e ano passados como argumentos", async function () {
+
+    await m.cadastraReceita({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
+    await m.cadastraReceita({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
+    await m.cadastraReceita({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
+
+    const receitas = await m.selecionaReceitaPeriodo({ ano: 2020, mes: 2 });
+
+    expect(receitas).to.be.lengthOf(2); 
+    expect(new Set(receitas.map(r => r.descricao))).deep.to.equal(new Set(["um teste", "outro teste"])); 
+
+});
+
 it("atualizaReceita deve retornar false quando id não estiver presente no objeto passado como argumento", async function () {
 
     const mov = { valor : 100 };
@@ -303,3 +339,49 @@ it("removeReceita deve retornar false quando não existir movimentação corresp
     expect(removido).to.be.equal(false); 
 
 });
+
+it("resumoMovimentacao deve retornar valor total das receitas no mês e ano informados", async function () {
+
+    await m.cadastraReceita({ data: new Date("2020-02-12"), descricao: "prêmio loteria", valor: 1 });
+    await m.cadastraReceita({ data: new Date("2020-02-09"), descricao: "aluguel",        valor: 400 });
+    await m.cadastraReceita({ data: new Date("2020-01-01"), descricao: "salario",        valor: 1400 });
+
+    await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+    await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+    await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+
+    const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+    expect(r.totalReceitas).to.be.equal(401); 
+
+});
+
+it("resumoMovimentacao deve retornar valor total das despesas no mês e ano informados", async function () {
+
+    await m.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
+    await m.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
+    await m.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
+
+    await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+    await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+    await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+
+    const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+    expect(r.totalDespesas).to.be.equal(2600); 
+
+});
+
+it("resumoMovimentacao deve retornar saldo do mês e ano informados", async function () {
+
+    await m.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
+    await m.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
+    await m.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
+
+    await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+    await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+    await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+
+    const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+    expect(r.saldo).to.be.equal(504.5 - 2600); 
+
+});
+
