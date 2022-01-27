@@ -174,5 +174,20 @@ export default async function routes(app) {
         }
     });
 
+    app.get("/controle-orcamento/api/resumo/:ano/:mes", async function(request, response) {
+
+        const { ano, mes } = request.params;
+
+        try {
+            const r = await m.resumoMovimentacao({ ano: parseInt(ano), mes: parseInt(mes) });
+            response.json(r);
+        } catch (e) {
+            console.error(e);
+            response.sendStatus(500);
+        }
+
+    });
+
+
 }
 

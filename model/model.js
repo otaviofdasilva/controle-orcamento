@@ -277,6 +277,9 @@ export default class Model {
 
 
         const [{ total: totalReceitas } ,...gastos] = r;
+
+        if (totalReceitas === null) return null;
+
         const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
         const detalhamento  = gastos.reduce((o, { detalhes, total}) => ({ ...o, [detalhes]: total }), {});
 
@@ -293,5 +296,4 @@ export default class Model {
     }
 
 }
-
 
