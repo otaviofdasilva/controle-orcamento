@@ -48,7 +48,7 @@ export default async function routes(app) {
         const id                = parseInt(request.params.id);
         const { data, ...info } = request.body;
 
-        try { 
+        try {
             const r = await m.atualizaReceita(data ? { id, data: new Date(data), ...info }
                                                    : { id, ...info })
 
@@ -61,7 +61,7 @@ export default async function routes(app) {
             response.status(400)
                     .json({ erro:    `não foi possível atualizar receita`
                           , receita: (data ? { data, ...info } : { ...info })
-                          }); 
+                          });
 
         }
     });
@@ -70,7 +70,7 @@ export default async function routes(app) {
 
         const { data, ...info } = request.body;
 
-        try { 
+        try {
 
             const r = await m.cadastraReceita({ data: new Date(data), ...info })
 
@@ -85,7 +85,7 @@ export default async function routes(app) {
             response.status(400)
                     .json({ erro: `não foi possível incluir receita`
                           , receita: { data, ...info }
-                          }); 
+                          });
 
         }
     });
@@ -126,14 +126,14 @@ export default async function routes(app) {
         } catch (e) {
             console.error(e);
             response.sendStatus(500);
-        } 
+        }
     });
 
     app.patch("/controle-orcamento/api/despesas/:id", async function(request, response) {
         const id                = parseInt(request.params.id);
         const { data, ...info } = request.body;
 
-        try { 
+        try {
             const r = await m.atualizaDespesa(data ? { id, data: new Date(data), ...info }
                                                    : { id, ...info })
 
@@ -146,7 +146,7 @@ export default async function routes(app) {
             response.status(400)
                     .json({ erro:    `não foi possível atualizar despesa`
                           , receita: (data ? { data, ...info } : { ...info })
-                          }); 
+                          });
 
         }
     });
@@ -154,7 +154,7 @@ export default async function routes(app) {
     app.post("/controle-orcamento/api/despesas", async function(request, response) {
         const { data, ...info } = request.body;
 
-        try { 
+        try {
 
             const r = await m.cadastraDespesa({ data: new Date(data), ...info })
 
@@ -169,7 +169,7 @@ export default async function routes(app) {
             response.status(400)
                     .json({ erro: `não foi possível incluir receita`
                           , receita: { data, ...info }
-                          }); 
+                          });
 
         }
     });
@@ -188,6 +188,4 @@ export default async function routes(app) {
 
     });
 
-
 }
-

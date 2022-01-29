@@ -1,25 +1,15 @@
-import { expect }         from "chai";
+import { categorias } from "../model/categoria.js";
+import { expect }     from "chai";
 import { EVENTUAL
-       , FIXA 
-       }                  from "../model/frequencia.js";
+       , FIXA
+       }              from "../model/frequencia.js";
 
-import { ALIMENTACAO
-       , EDUCACAO
-       , IMPREVISTOS
-       , LAZER
-       , MORADIA
-       , OUTRAS
-       , SAUDE
-       , TRANSPORTE
-       , categorias
-       }                  from "../model/categoria.js";
-
-import Model              from "../model/model.js";
-import pool               from "../db.js";
+import Model          from "../model/model.js";
+import pool           from "../db.js";
 
 let m;
 beforeEach(async function () {
-    m = new Model(pool); 
+    m = new Model(pool);
     await m.destroiTabela();
     await m.preparaTabela();
 });
@@ -33,7 +23,7 @@ describe("Despesas", function () {
 
         const mov = { valor : 100 };
         const r   = await m.atualizaDespesa(mov);
-        expect(r).to.be.equal(false); 
+        expect(r).to.be.equal(false);
 
     });
 
@@ -47,7 +37,7 @@ describe("Despesas", function () {
                         , valor: 100 };
 
         const r       = await m.atualizaDespesa(mov2);
-        expect(r).to.be.equal(false); 
+        expect(r).to.be.equal(false);
 
     });
 
@@ -61,10 +51,10 @@ describe("Despesas", function () {
                           , valor: 100 };
 
         const r         = await m.atualizaDespesa(mov2);
-        expect(r).to.be.equal(true); 
-        
+        expect(r).to.be.equal(true);
+
         const { valor } = await m.selecionaDespesa({ id });
-        expect(valor).to.be.equal(mov2.valor); 
+        expect(valor).to.be.equal(mov2.valor);
 
     });
 
@@ -141,7 +131,7 @@ describe("Despesas", function () {
         await m.cadastraDespesa(mov);
         await m.cadastraDespesa(mov);
         await m.cadastraDespesa(mov);
-        expect(await m.selecionaDespesa()).to.be.lengthOf(3); 
+        expect(await m.selecionaDespesa()).to.be.lengthOf(3);
 
     });
 
@@ -152,11 +142,11 @@ describe("Despesas", function () {
 
         const r   = await m.selecionaDespesa({ id });
 
-        expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString()); 
-        expect(r.descricao).to.be.equal(mov.descricao); 
-        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2)); 
-        expect(r.id).to.be.equal(id); 
-        expect(r.frequencia).to.be.equal(EVENTUAL); 
+        expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
+        expect(r.descricao).to.be.equal(mov.descricao);
+        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2));
+        expect(r.id).to.be.equal(id);
+        expect(r.frequencia).to.be.equal(EVENTUAL);
 
     });
 
@@ -166,8 +156,8 @@ describe("Despesas", function () {
         await m.cadastraDespesa({ data: new Date(), descricao: "outro teste", valor: 400 });
         await m.cadastraDespesa({ data: new Date(), descricao: "...",         valor: 20 });
         const despesas = await m.selecionaDespesa({ descricao: "teste" });
-        expect(despesas).to.be.lengthOf(2); 
-        expect(despesas.map(d => d.descricao)).deep.to.equal(["um teste", "outro teste"]); 
+        expect(despesas).to.be.lengthOf(2);
+        expect(despesas.map(d => d.descricao)).deep.to.equal(["um teste", "outro teste"]);
 
     });
 
@@ -179,8 +169,8 @@ describe("Despesas", function () {
 
         const despesas = await m.selecionaDespesaPeriodo({ ano: 2020, mes: 2 });
 
-        expect(despesas).to.be.lengthOf(2); 
-        expect(new Set(despesas.map(d => d.descricao))).deep.to.equal(new Set(["um teste", "outro teste"])); 
+        expect(despesas).to.be.lengthOf(2);
+        expect(new Set(despesas.map(d => d.descricao))).deep.to.equal(new Set(["um teste", "outro teste"]));
 
     });
 
@@ -190,14 +180,14 @@ describe("Despesas", function () {
         const { id }   = await m.cadastraDespesa(mov);
 
         const removido = await m.removeDespesa({ id });
-        expect(removido).to.be.equal(true); 
+        expect(removido).to.be.equal(true);
 
     });
 
     it("removeDespesa deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
         const removido = await m.removeDespesa({ id: 10000000 });
-        expect(removido).to.be.equal(false); 
+        expect(removido).to.be.equal(false);
 
     });
 });
@@ -247,7 +237,7 @@ describe("Receitas", function () {
         await m.cadastraReceita(mov);
         await m.cadastraReceita(mov);
         await m.cadastraReceita(mov);
-        expect(await m.selecionaReceita()).to.be.lengthOf(3); 
+        expect(await m.selecionaReceita()).to.be.lengthOf(3);
 
     });
 
@@ -257,8 +247,8 @@ describe("Receitas", function () {
         await m.cadastraReceita({ data: new Date(), descricao: "outro teste", valor: 400 });
         await m.cadastraReceita({ data: new Date(), descricao: "...",         valor: 20 });
         const receitas = await m.selecionaReceita({ descricao: "teste" });
-        expect(receitas).to.be.lengthOf(2); 
-        expect(receitas.map(r => r.descricao)).deep.to.equal(["um teste", "outro teste"]); 
+        expect(receitas).to.be.lengthOf(2);
+        expect(receitas.map(r => r.descricao)).deep.to.equal(["um teste", "outro teste"]);
     });
 
     it("selecionaReceita com argumento com id deve retornar a receita de id correspondente", async function () {
@@ -268,10 +258,10 @@ describe("Receitas", function () {
 
         const r   = await m.selecionaReceita({ id: i.id });
 
-        expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString()); 
-        expect(r.descricao).to.be.equal(mov.descricao); 
-        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2)); 
-        expect(r.id).to.be.equal(i.id); 
+        expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
+        expect(r.descricao).to.be.equal(mov.descricao);
+        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2));
+        expect(r.id).to.be.equal(i.id);
 
     });
 
@@ -283,8 +273,8 @@ describe("Receitas", function () {
 
         const receitas = await m.selecionaReceitaPeriodo({ ano: 2020, mes: 2 });
 
-        expect(receitas).to.be.lengthOf(2); 
-        expect(new Set(receitas.map(r => r.descricao))).deep.to.equal(new Set(["um teste", "outro teste"])); 
+        expect(receitas).to.be.lengthOf(2);
+        expect(new Set(receitas.map(r => r.descricao))).deep.to.equal(new Set(["um teste", "outro teste"]));
 
     });
 
@@ -292,7 +282,7 @@ describe("Receitas", function () {
 
         const mov = { valor : 100 };
         const r   = await m.atualizaReceita(mov);
-        expect(r).to.be.equal(false); 
+        expect(r).to.be.equal(false);
 
     });
 
@@ -306,7 +296,7 @@ describe("Receitas", function () {
                         , valor: 100 };
 
         const r       = await m.atualizaReceita(mov2);
-        expect(r).to.be.equal(false); 
+        expect(r).to.be.equal(false);
 
     });
 
@@ -320,10 +310,10 @@ describe("Receitas", function () {
                           , valor: 100 };
 
         const r         = await m.atualizaReceita(mov2);
-        expect(r).to.be.equal(true); 
-        
+        expect(r).to.be.equal(true);
+
         const { valor } = await m.selecionaReceita({ id });
-        expect(valor).to.be.equal(mov2.valor); 
+        expect(valor).to.be.equal(mov2.valor);
 
     });
 
@@ -333,14 +323,14 @@ describe("Receitas", function () {
         const { id }   = await m.cadastraReceita(mov);
 
         const removido = await m.removeReceita({ id });
-        expect(removido).to.be.equal(true); 
+        expect(removido).to.be.equal(true);
 
     });
 
     it("removeReceita deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
         const removido = await m.removeReceita({ id: 10000000 });
-        expect(removido).to.be.equal(false); 
+        expect(removido).to.be.equal(false);
 
     });
 });
@@ -358,7 +348,7 @@ describe("Resumo Movimentação", function () {
         await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
         const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
-        expect(r.totalReceitas).to.be.equal(401); 
+        expect(r.totalReceitas).to.be.equal(401);
 
     });
 
@@ -373,7 +363,7 @@ describe("Resumo Movimentação", function () {
         await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
         const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
-        expect(r.totalDespesas).to.be.equal(2600); 
+        expect(r.totalDespesas).to.be.equal(2600);
 
     });
 
@@ -388,8 +378,7 @@ describe("Resumo Movimentação", function () {
         await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
         const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
-        expect(r.saldo).to.be.equal(504.5 - 2600); 
+        expect(r.saldo).to.be.equal(504.5 - 2600);
 
     });
 });
-

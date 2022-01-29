@@ -3,19 +3,18 @@ import { FIXA,       EVENTUAL } from "./frequencia.js";
 import { DESPESA,    RECEITA, } from "./tipo.js";
 
 const GASTOS = { ALIMENTACAO: 0
-               , EDUCACAO:    0
+               , EDUCACAO: 0
                , IMPREVISTOS: 0
-               , LAZER:       0
-               , MORADIA:     0
-               , OUTRAS:      0
-               , SAUDE:       0
-               , TRANSPORTE:  0
+               , LAZER: 0
+               , MORADIA: 0
+               , OUTRAS: 0
+               , SAUDE: 0
+               , TRANSPORTE: 0
                };
-
 
 function valida({ data, descricao, valor, }, ...vs) {
 
-    const dataInvalida      = { campo:  "data"
+    const dataInvalida =      { campo:  "data"
                               , erro:   "data não é objeto do tipo Date"
                               , valido: data instanceof Date
                               , valor:  data
@@ -27,7 +26,7 @@ function valida({ data, descricao, valor, }, ...vs) {
                               , valor:  descricao
                               };
 
-    const valorInvalido     = { campo:  "valor"
+    const valorInvalido =     { campo:  "valor"
                               , erro:   "valor deve ser positivo"
                               , valido: valor > 0
                               , valor:  valor
@@ -37,7 +36,7 @@ function valida({ data, descricao, valor, }, ...vs) {
                 , descricaoInvalida
                 , valorInvalido
                 , ...vs
-                ].filter(x => !x.valido) ;
+                ].filter(x => !x.valido);
 
     if (!erros.length) return null;
 
@@ -56,7 +55,7 @@ export default class Model {
 
     async destroiTabela() {
 
-        const { pool, tabela } = this;
+        const { pool } = this;
 
         try {
 
@@ -70,7 +69,7 @@ export default class Model {
     }
 
     async preparaTabela() {
-        const { pool, } = this;
+        const { pool } = this;
 
         try {
             const query = `CREATE TABLE IF NOT EXISTS movimentacao (
@@ -93,11 +92,11 @@ export default class Model {
 
     async selecionaDespesaPeriodo({ ano, mes }) {
 
-        const { pool, } = this;
+        const { pool } = this;
 
         const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao 
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ ano, mes ]);
+                                      FROM   movimentacao
+                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ano, mes]);
 
         return r;
 
@@ -105,11 +104,11 @@ export default class Model {
 
     async selecionaDespesa({ descricao, id } = {}) {
 
-        const { pool, } = this;
+        const { pool } = this;
 
         const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
                        : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND descricao RLIKE ?`, descricao)
-                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`)
+                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
         if (id) {
             return r[0] ? r[0] : null;
         } else {
@@ -119,21 +118,21 @@ export default class Model {
     }
 
     async selecionaReceita({ descricao, id } = {}) {
-        const { pool, } = this;
+        const { pool } = this;
 
-        const [r]       = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
-                             : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao RLIKE ?`, descricao)
-                                         : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
+        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
+                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao RLIKE ?`, descricao)
+                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
 
         if (id) {
             if (r[0]) {
-                const { id, descricao, valor, data, frequencia, ..._ } = r[0];
+                const  { id, descricao, valor, data, ..._ } = r[0];
                 return { id, descricao, valor, data };
             }
 
             return null;
         } else {
-            return r.map(function ({ id, descricao, valor, data, frequencia }) {
+            return r.map(function ({ id, descricao, valor, data }) {
                 return { id, descricao, valor, data };
             });
         }
@@ -145,8 +144,8 @@ export default class Model {
         const { pool } = this;
 
         const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao 
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'RECEITA'`, [ ano, mes ]);
+                                      FROM   movimentacao
+                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'RECEITA'`, [ano, mes]);
 
         return r;
 
@@ -159,8 +158,8 @@ export default class Model {
 
         const pool = this.pool;
 
-        const [r]  = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'DESPESA' AND ?`
-                                     , [ info, { id } ]);
+        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'DESPESA' AND ?`
+                                    , [info, { id }]);
 
         return !!r.affectedRows;
     }
@@ -171,8 +170,8 @@ export default class Model {
 
         const pool = this.pool;
 
-        const [r]  = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'RECEITA' AND ?`
-                                     , [ info, { id } ]);
+        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'RECEITA' AND ?`
+            , [info, { id }]);
 
         return !!r.affectedRows;
     }
@@ -183,8 +182,8 @@ export default class Model {
 
         const pool = this.pool;
 
-        const [r]  = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND ?`
-                                     , { id });
+        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND ?`
+            , { id });
 
         return !!r.affectedRows;
     }
@@ -195,8 +194,8 @@ export default class Model {
 
         const pool = this.pool;
 
-        const [r]  = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND ?`
-                                     , { id });
+        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND ?`
+                                    , { id });
 
         return !!r.affectedRows;
     }
@@ -210,12 +209,12 @@ export default class Model {
         const tipo = RECEITA;
         const pool = this.pool;
 
-        const [r]  = await pool.query(`INSERT INTO movimentacao SET ?`
-                                     , { data
-                                       , descricao
-                                       , tipo
-                                       , valor
-                                       });
+        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
+                                    , { data
+                                      , descricao
+                                      , tipo
+                                      , valor
+                                      });
 
         return { id: r.insertId };
     }
@@ -224,11 +223,11 @@ export default class Model {
 
         const f = frequencia || EVENTUAL;
         const c = categoria  || OUTRAS;
-        const categoriaInvalida  = { campo:  "categoria"
-                                   , erro:   `categoria não possui valor correto: ${categorias.join(" | ")}`
-                                   , valido: categorias.includes(c)
-                                   , valor:  c
-                                   };
+        const categoriaInvalida = { campo:  "categoria"
+                                  , erro:   `categoria não possui valor correto: ${categorias.join(" | ")}`
+                                  , valido: categorias.includes(c)
+                                  , valor:  c
+                                  };
 
         const frequenciaInvalida = { campo:  "frequencia"
                                    , erro:   "frequência não possui valor correto: FIXA | EVENTUAL "
@@ -240,48 +239,48 @@ export default class Model {
 
         if (erros) return erros;
 
-        const tipo = DESPESA;
-        const pool = this.pool;
+        const tipo     = DESPESA;
+        const { pool } = this;
 
-        const [r]  = await pool.query(`INSERT INTO movimentacao SET ?`
-                                     , { categoria
-                                       , data
-                                       , descricao
-                                       , tipo
-                                       , valor
-                                       , frequencia: f
-                                       });
+        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
+                                    , { categoria
+                                      , data
+                                      , descricao
+                                      , tipo
+                                      , valor
+                                      , frequencia: f
+                                      });
 
         return { id: r.insertId };
     }
 
     async resumoMovimentacao({ ano, mes }) {
 
-        const pool = this.pool;
+        const { pool } = this;
 
-         const [r]  = await pool.query(`
-                                       (SELECT 'receitas' detalhes, SUM(valor) total 
-                                        FROM movimentacao 
-                                        WHERE tipo = 'RECEITA' AND year(data) = ? AND month(data) = ?) 
-                                        UNION 
-                                       (SELECT categoria, SUM(valor) total 
-                                        FROM movimentacao 
+        const [r] = await pool.query(`
+                                       (SELECT 'receitas' detalhes, SUM(valor) total
+                                        FROM movimentacao
+                                        WHERE tipo = 'RECEITA' AND year(data) = ? AND month(data) = ?)
+                                        UNION
+                                       (SELECT categoria, SUM(valor) total
+                                        FROM movimentacao
                                         WHERE tipo = 'DESPESA' AND year(data) = ? AND month(data) = ?
                                         GROUP BY categoria)
                                       `
-                                     , [ ano
-                                       , mes
-                                       , ano
-                                       , mes
-                                       ]);
+                                    , [ ano
+                                      , mes
+                                      , ano
+                                      , mes
+                                      ]);
 
 
-        const [{ total: totalReceitas } ,...gastos] = r;
+        const [{ total: totalReceitas }, ...gastos] = r;
 
         if (totalReceitas === null) return null;
 
         const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
-        const detalhamento  = gastos.reduce((o, { detalhes, total}) => ({ ...o, [detalhes]: total }), {});
+        const detalhamento  = gastos.reduce((o, { detalhes, total }) => ({ ...o, [detalhes]: total }), {});
 
         const resumo = { despesas: { ...GASTOS
                                    , ...detalhamento
@@ -296,4 +295,3 @@ export default class Model {
     }
 
 }
-

@@ -19,4 +19,3 @@ async function fechaPool() {
 process.on("SIGINT", fechaPool);
 
 export default pool;
-
