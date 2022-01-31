@@ -171,7 +171,7 @@ export default class Model {
         const pool = this.pool;
 
         const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'RECEITA' AND ?`
-            , [info, { id }]);
+                                    , [info, { id }]);
 
         return !!r.affectedRows;
     }
@@ -183,7 +183,7 @@ export default class Model {
         const pool = this.pool;
 
         const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND ?`
-            , { id });
+                                    , { id });
 
         return !!r.affectedRows;
     }
