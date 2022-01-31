@@ -3,13 +3,13 @@ import { FIXA,       EVENTUAL } from "./frequencia.js";
 import { DESPESA,    RECEITA, } from "./tipo.js";
 
 const GASTOS = { ALIMENTACAO: 0
-               , EDUCACAO: 0
+               , EDUCACAO:    0
                , IMPREVISTOS: 0
-               , LAZER: 0
-               , MORADIA: 0
-               , OUTRAS: 0
-               , SAUDE: 0
-               , TRANSPORTE: 0
+               , LAZER:       0
+               , MORADIA:     0
+               , OUTRAS:      0
+               , SAUDE:       0
+               , TRANSPORTE:  0
                };
 
 function valida({ data, descricao, valor, }, ...vs) {
