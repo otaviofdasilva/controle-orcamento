@@ -6,12 +6,25 @@ import { EVENTUAL
 
 import Model          from "../model/model.js";
 import pool           from "../db.js";
+import { ALIMENTACAO
+       , EDUCACAO
+       , IMPREVISTOS
+       , LAZER
+       , MORADIA
+       , OUTRAS
+       , SAUDE
+       , TRANSPORTE
+       }              from "../model/categoria.js";
+
 
 let m;
 beforeEach(async function () {
     m = new Model(pool);
-    await m.destroiTabela();
     await m.preparaTabela();
+});
+
+afterEach(async function() {
+    await m.destroiTabela();
 });
 
 after(async function () {
@@ -380,5 +393,20 @@ describe("Resumo Movimentação", function () {
         const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
         expect(r.saldo).to.be.equal(504.5 - 2600);
 
+    });
+
+    it("resumoMovimentacao deve retornar objeto seguindo o schema mesmo sem movimentação no mês e ano informados", async function () {
+        const r = await m.resumoMovimentacao({ ano: 1999, mes: 1 });
+        expect(r.saldo).to.be.equal(0);
+        expect(r.totalDespesas).to.be.equal(0);
+        expect(r.totalReceitas).to.be.equal(0);
+        expect(r.despesas[ALIMENTACAO]).to.be.equal(0);
+        expect(r.despesas[EDUCACAO]).to.be.equal(0);
+        expect(r.despesas[IMPREVISTOS]).to.be.equal(0);
+        expect(r.despesas[LAZER]).to.be.equal(0);
+        expect(r.despesas[MORADIA]).to.be.equal(0);
+        expect(r.despesas[OUTRAS]).to.be.equal(0);
+        expect(r.despesas[SAUDE]).to.be.equal(0);
+        expect(r.despesas[TRANSPORTE]).to.be.equal(0);
     });
 });

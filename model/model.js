@@ -258,29 +258,23 @@ export default class Model {
 
         const { pool } = this;
 
-        const [r] = await pool.query(`
-                                       (SELECT 'receitas' detalhes, SUM(valor) total
-                                        FROM movimentacao
-                                        WHERE tipo = 'RECEITA' AND year(data) = ? AND month(data) = ?)
-                                        UNION
-                                       (SELECT categoria, SUM(valor) total
-                                        FROM movimentacao
-                                        WHERE tipo = 'DESPESA' AND year(data) = ? AND month(data) = ?
-                                        GROUP BY categoria)
+        const [r] = await pool.query(`SELECT tipo, SUM(valor) total, categoria
+                                      FROM movimentacao
+                                      WHERE YEAR(data) = ? AND MONTH(data) = ?
+                                      GROUP BY categoria, tipo
+                                      ORDER BY tipo DESC
                                       `
                                     , [ ano
                                       , mes
-                                      , ano
-                                      , mes
                                       ]);
 
-
-        const [{ total: totalReceitas }, ...gastos] = r;
-
-        if (totalReceitas === null) return null;
-
+        const gastos        = r.filter(m => m.tipo === DESPESA);
         const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
-        const detalhamento  = gastos.reduce((o, { detalhes, total }) => ({ ...o, [detalhes]: total }), {});
+
+        const [receitas]    = r.filter(m => m.tipo === RECEITA);
+        const totalReceitas = (receitas ?? { total: 0 }).total;
+
+        const detalhamento  = gastos.reduce((o, { categoria, total }) => ({ ...o, [categoria]: total }), {});
 
         const resumo = { despesas: { ...GASTOS
                                    , ...detalhamento
