@@ -3,9 +3,7 @@ import { expect }     from "chai";
 import { EVENTUAL
        , FIXA
        }              from "../model/frequencia.js";
-
 import Model          from "../model/model.js";
-import pool           from "../db.js";
 import { ALIMENTACAO
        , EDUCACAO
        , IMPREVISTOS
@@ -16,19 +14,20 @@ import { ALIMENTACAO
        , TRANSPORTE
        }              from "../model/categoria.js";
 
+import Repo           from "../model/repositories/mysql-repository.js";
 
 let m;
 beforeEach(async function () {
-    m = new Model(pool);
-    await m.preparaTabela();
+    m = new Model(new Repo());
+    await m.init();
 });
 
 afterEach(async function() {
-    await m.destroiTabela();
+    await m.reset();
 });
 
 after(async function () {
-    await pool.end();
+    process.emit("SIGINT", 0);
 });
 
 describe("Despesas", function () {

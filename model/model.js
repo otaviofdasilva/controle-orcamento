@@ -1,16 +1,5 @@
 import { categorias, OUTRAS }   from "./categoria.js";
 import { FIXA,       EVENTUAL } from "./frequencia.js";
-import { DESPESA,    RECEITA, } from "./tipo.js";
-
-const GASTOS = { ALIMENTACAO: 0
-               , EDUCACAO:    0
-               , IMPREVISTOS: 0
-               , LAZER:       0
-               , MORADIA:     0
-               , OUTRAS:      0
-               , SAUDE:       0
-               , TRANSPORTE:  0
-               };
 
 function valida({ data, descricao, valor, }, ...vs) {
 
@@ -49,155 +38,48 @@ function valida({ data, descricao, valor, }, ...vs) {
 
 export default class Model {
 
-    constructor(pool) {
-        this.pool = pool;
+    constructor(repository) {
+        this.repo = repository;
     }
 
-    async destroiTabela() {
-
-        const { pool } = this;
-
-        try {
-
-            const query = `DROP TABLE IF EXISTS movimentacao`;
-            await pool.query(query);
-
-        } catch (e) {
-            console.error(e);
-        }
-
+    async reset() {
+        await this.repo.destroiTabela();
     }
 
-    async preparaTabela() {
-        const { pool } = this;
-
-        try {
-            const query = `CREATE TABLE IF NOT EXISTS movimentacao (
-                                id         int NOT NULL AUTO_INCREMENT,
-                                descricao  varchar(100) NOT NULL,
-                                valor      decimal(10,2) NOT NULL,
-                                data       date NOT NULL,
-                                tipo       enum('DESPESA', 'RECEITA') NOT NULL,
-                                frequencia enum('FIXA','EVENTUAL') DEFAULT NULL,
-                                categoria  enum('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS') default 'OUTRAS',
-                                PRIMARY KEY  (id)
-                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`
-
-            await pool.query(query);
-
-        } catch (e) {
-            console.error(e);
-        }
+    async init() {
+        await this.repo.preparaTabela();
     }
 
-    async selecionaDespesaPeriodo({ ano, mes }) {
-
-        const { pool } = this;
-
-        const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ano, mes]);
-
-        return r;
-
+    async selecionaDespesaPeriodo(periodo) {
+        return await this.repo.selecionaDespesaPeriodo(periodo);
     }
 
-    async selecionaDespesa({ descricao, id } = {}) {
-
-        const { pool } = this;
-
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
-                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND descricao RLIKE ?`, descricao)
-                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
-        if (id) {
-            return r[0] ? r[0] : null;
-        } else {
-            return r;
-        }
-
+    async selecionaDespesa(despesa = {}) {
+        return await this.repo.selecionaDespesa(despesa);
     }
 
-    async selecionaReceita({ descricao, id } = {}) {
-        const { pool } = this;
-
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
-                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao RLIKE ?`, descricao)
-                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
-
-        if (id) {
-            if (r[0]) {
-                const  { id, descricao, valor, data, ..._ } = r[0];
-                return { id, descricao, valor, data };
-            }
-
-            return null;
-        } else {
-            return r.map(function ({ id, descricao, valor, data }) {
-                return { id, descricao, valor, data };
-            });
-        }
-
+    async selecionaReceita(receita = {}) {
+        return await this.repo.selecionaReceita(receita);
     }
 
-    async selecionaReceitaPeriodo({ ano, mes }) {
-
-        const { pool } = this;
-
-        const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'RECEITA'`, [ano, mes]);
-
-        return r;
-
+    async selecionaReceitaPeriodo(periodo) {
+        return await this.repo.selecionaReceitaPeriodo(periodo);
     }
 
-
-    async atualizaDespesa({ id, ...info }) {
-
-        if (!id) return false;
-
-        const pool = this.pool;
-
-        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'DESPESA' AND ?`
-                                    , [info, { id }]);
-
-        return !!r.affectedRows;
+    async atualizaDespesa(despesa) {
+        return await this.repo.atualizaDespesa(despesa);
     }
 
-    async atualizaReceita({ id, ...info }) {
-
-        if (!id) return false;
-
-        const pool = this.pool;
-
-        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'RECEITA' AND ?`
-                                    , [info, { id }]);
-
-        return !!r.affectedRows;
+    async atualizaReceita(receita) {
+        return await this.repo.atualizaReceita(receita);
     }
 
-    async removeReceita({ id }) {
-
-        if (!id) return false;
-
-        const pool = this.pool;
-
-        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND ?`
-                                    , { id });
-
-        return !!r.affectedRows;
+    async removeReceita(receita) {
+        return await this.repo.removeReceita(receita);
     }
 
-    async removeDespesa({ id }) {
-
-        if (!id) return false;
-
-        const pool = this.pool;
-
-        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND ?`
-                                    , { id });
-
-        return !!r.affectedRows;
+    async removeDespesa(despesa) {
+        return await this.repo.removeDespesa(despesa);
     }
 
     async cadastraReceita({ data, descricao, valor }) {
@@ -206,20 +88,10 @@ export default class Model {
 
         if (erros) return erros;
 
-        const tipo = RECEITA;
-        const pool = this.pool;
-
-        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
-                                    , { data
-                                      , descricao
-                                      , tipo
-                                      , valor
-                                      });
-
-        return { id: r.insertId };
+        return await this.repo.cadastraReceita({ data, descricao, valor });
     }
 
-    async cadastraDespesa({ categoria, data, descricao, frequencia, valor } = { frequencia: EVENTUAL }) {
+    async cadastraDespesa({ categoria, data, descricao, frequencia, valor }) {
 
         const f = frequencia || EVENTUAL;
         const c = categoria  || OUTRAS;
@@ -239,53 +111,11 @@ export default class Model {
 
         if (erros) return erros;
 
-        const tipo     = DESPESA;
-        const { pool } = this;
-
-        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
-                                    , { categoria
-                                      , data
-                                      , descricao
-                                      , tipo
-                                      , valor
-                                      , frequencia: f
-                                      });
-
-        return { id: r.insertId };
+        return await this.repo.cadastraDespesa({ categoria, data, descricao, frequencia: f, valor });
     }
 
-    async resumoMovimentacao({ ano, mes }) {
-
-        const { pool } = this;
-
-        const [r] = await pool.query(`SELECT tipo, SUM(valor) total, categoria
-                                      FROM movimentacao
-                                      WHERE YEAR(data) = ? AND MONTH(data) = ?
-                                      GROUP BY categoria, tipo
-                                      ORDER BY tipo DESC
-                                      `
-                                    , [ ano
-                                      , mes
-                                      ]);
-
-        const gastos        = r.filter(m => m.tipo === DESPESA);
-        const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
-
-        const [receitas]    = r.filter(m => m.tipo === RECEITA);
-        const totalReceitas = (receitas ?? { total: 0 }).total;
-
-        const detalhamento  = gastos.reduce((o, { categoria, total }) => ({ ...o, [categoria]: total }), {});
-
-        const resumo = { despesas: { ...GASTOS
-                                   , ...detalhamento
-                                   }
-                       , saldo: totalReceitas - totalDespesas
-                       , totalReceitas
-                       , totalDespesas
-                       };
-
-        return resumo;
-
+    async resumoMovimentacao(periodo) {
+        return await this.repo.resumoMovimentacao(periodo);
     }
 
 }
