@@ -14,7 +14,7 @@ import { ALIMENTACAO
        , TRANSPORTE
        }              from "../model/categoria.js";
 
-import Repo           from "../model/repositories/mysql-repository.js";
+import Repo           from "../model/repositories/pg-repository.js";
 
 let m;
 beforeEach(async function () {
