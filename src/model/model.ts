@@ -38,8 +38,7 @@ function valida({ data, descricao, valor, }, ...vs) {
 
 export default class Model {
 
-    constructor(repository) {
-        this.repo = repository;
+    constructor(private repo: Repo) {
     }
 
     async reset() {

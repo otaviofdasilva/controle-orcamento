@@ -1,9 +1,9 @@
-import { categorias } from "../model/categoria.js";
+import { categorias } from "../dist/model/categoria.js";
 import { expect }     from "chai";
 import { EVENTUAL
        , FIXA
-       }              from "../model/frequencia.js";
-import Model          from "../model/model.js";
+       }              from "../dist/model/frequencia.js";
+import Model          from "../dist/model/model.js";
 import { ALIMENTACAO
        , EDUCACAO
        , IMPREVISTOS
@@ -12,10 +12,14 @@ import { ALIMENTACAO
        , OUTRAS
        , SAUDE
        , TRANSPORTE
-       }              from "../model/categoria.js";
+       }              from "../dist/model/categoria.js";
 
-import Repo           from "../model/repositories/pg-repository.js";
+// import Repo           from "../dist/model/repositories/pg-repository.js";
+import Repo           from "../dist/model/repositories/mysql-repository.js";
 
+/**
+ * @type Repo
+ */
 let m;
 beforeEach(async function () {
     m = new Model(new Repo());

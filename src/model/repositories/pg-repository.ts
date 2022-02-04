@@ -4,6 +4,9 @@ import { DESPESA
        , RECEITA
        }            from "../tipo.js";
 
+import { Despesa, Repo 
+       }            from "./repo";
+
 
 const pool = new Pool({ connectionTimeoutMillis: 2000
                       , database:                process.env["DB_NAME"]
@@ -36,7 +39,7 @@ const GASTOS = { ALIMENTACAO: 0
                , TRANSPORTE:  0
                };
 
-export default class PgRepository {
+export default class PgRepository implements Repo {
 
     async destroiTabela() {
 
@@ -70,7 +73,7 @@ export default class PgRepository {
         }
     }
 
-    async selecionaDespesaPeriodo({ ano, mes }) {
+    async selecionaDespesaPeriodo({ ano, mes }: { ano: number, mes: number }): Promise<Despesa[]> {
         const [r] = await pool.query(`SELECT *
                                       FROM   movimentacao
                                       WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ano, mes]);

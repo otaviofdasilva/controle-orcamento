@@ -3,12 +3,14 @@ import { EVENTUAL }   from "../frequencia.js";
 import { DESPESA
        , RECEITA
        }              from "../tipo.js";
+import { Repo } from "./repo.js";
 
 
 const pool = createPool({ database:       process.env["DB_NAME"]
                         , decimalNumbers: true
                         , host:           process.env["DB_HOST"] || "localhost"
                         , password:       process.env["DB_PASSWORD"]
+                        //@ts-ignore
                         , port:           process.env["DB_PORT"] || 3306
                         , user:           process.env["DB_USER"]
                         });
@@ -32,7 +34,7 @@ const GASTOS = { ALIMENTACAO: 0
                , TRANSPORTE:  0
                };
 
-export default class MysqlRepository {
+export default class MysqlRepository implements Repo {
 
     async destroiTabela() {
 

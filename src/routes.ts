@@ -1,11 +1,11 @@
 import Model from "./model/model.js";
-import pool  from "./db.js";
+import Repo  from "./model/repositories/mysql-repository.js";
 
 
 export default async function routes(app) {
 
-    const m = new Model(pool);
-    await m.preparaTabela();
+    const m = new Model(Repo);
+    await m.init();
 
     app.delete("/controle-orcamento/api/receitas/:id", async function(request, response) {
         const id = parseInt(request.params.id);
@@ -74,7 +74,7 @@ export default async function routes(app) {
 
             const r = await m.cadastraReceita({ data: new Date(data), ...info })
 
-            if (!r.id) throw e;
+            if (!r.id) throw new Error("Não foi possível cadastrar a receita");
 
             response.json(r);
 
@@ -158,7 +158,7 @@ export default async function routes(app) {
 
             const r = await m.cadastraDespesa({ data: new Date(data), ...info })
 
-            if (!r.id) throw e;
+            if (!r.id) throw new Error("Não foi possível cadastrar a receita");
 
             response.json(r);
 
