@@ -24,7 +24,8 @@
   "homepage": "https://github.com/otaviofdasilva/controle-orcamento#readme",
   "dependencies": {
     "express": "^4.17.2",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "pg": "^8.7.3"
   },
   "devDependencies": {
     "chai": "^4.3.4",
