@@ -7,11 +7,11 @@ import { DESPESA,    RECEITA }  from "./tipo.js";
 
 const { Pool } = pg;
 const pool     = new Pool({ connectionTimeoutMillis: 30000
-                          , database:       process.env["DB_NAME"]
-                          , host:           process.env["DB_HOST"]
-                          , password:       process.env["DB_PASSWORD"]
-                          , port:           process.env["DB_PORT"]
-                          , user:           process.env["DB_USER"]
+                          , database:                process.env["DB_NAME"].trim()
+                          , host:                    process.env["DB_HOST"].trim()
+                          , password:                process.env["DB_PASSWORD"].trim()
+                          , port:                    process.env["DB_PORT"].trim()
+                          , user:                    process.env["DB_USER"].trim()
                           });
 
 async function fechaPool() {
