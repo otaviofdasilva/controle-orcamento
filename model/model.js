@@ -1,6 +1,27 @@
+import { default as pg }        from "pg";
+
 import { categorias, OUTRAS }   from "./categoria.js";
 import { FIXA,       EVENTUAL } from "./frequencia.js";
-import { DESPESA,    RECEITA, } from "./tipo.js";
+import { DESPESA,    RECEITA }  from "./tipo.js";
+
+
+const { Pool } = pg;
+const pool     = new Pool({ connectionTimeoutMillis: 30000
+                          , database:       process.env["DB_NAME"]
+                          , host:           process.env["DB_HOST"]
+                          , password:       process.env["DB_PASSWORD"]
+                          , port:           process.env["DB_PORT"]
+                          , user:           process.env["DB_USER"]
+                          });
+
+async function fechaPool() {
+    console.log("encerrando pool de conexões.");
+    await pool.end();
+    console.log("pool encerrado.");
+    process.exit(1);
+}
+
+process.on("SIGINT", fechaPool);
 
 const GASTOS = { ALIMENTACAO: 0
                , EDUCACAO:    0
@@ -47,20 +68,25 @@ function valida({ data, descricao, valor, }, ...vs) {
 
 }
 
-export default class Model {
+export async function q(query, ...params) {
+    return new Promise(function (resolve, reject) {
+        pool.query(query, params, function (e, _) {
+            if (e) return reject(e);
+            resolve(_);
+        });
+    });
+}
 
-    constructor(pool) {
-        this.pool = pool;
-    }
+export default class Model {
 
     async destroiTabela() {
 
-        const { pool } = this;
-
         try {
 
-            const query = `DROP TABLE IF EXISTS movimentacao`;
-            await pool.query(query);
+            await q(`DROP TABLE IF EXISTS movimentacao`);
+            await q(`DROP TYPE categoria`);
+            await q(`DROP TYPE frequencia`);
+            await q(`DROP TYPE tipo`);
 
         } catch (e) {
             console.error(e);
@@ -69,22 +95,21 @@ export default class Model {
     }
 
     async preparaTabela() {
-        const { pool } = this;
 
         try {
-            const query = `CREATE TABLE IF NOT EXISTS movimentacao (
-                                id         int NOT NULL AUTO_INCREMENT,
-                                descricao  varchar(100) NOT NULL,
-                                valor      decimal(10,2) NOT NULL,
-                                data       date NOT NULL,
-                                tipo       enum('DESPESA', 'RECEITA') NOT NULL,
-                                frequencia enum('FIXA','EVENTUAL') DEFAULT NULL,
-                                categoria  enum('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS') default 'OUTRAS',
-                                PRIMARY KEY  (id)
-                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`
-
-            await pool.query(query);
-
+            await q(`CREATE TYPE tipo AS ENUM('DESPESA', 'RECEITA')`);
+            await q(`CREATE TYPE frequencia AS ENUM('FIXA', 'EVENTUAL')`);
+            await q(`CREATE TYPE categoria AS ENUM('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS')`);
+            await q(`CREATE TABLE IF NOT EXISTS movimentacao (
+                        id         SERIAL,
+                        descricao  VARCHAR(100) NOT NULL,
+                        valor      DECIMAL(10,2) NOT NULL,
+                        data       DATE NOT NULL,
+                        tipo       tipo NOT NULL,
+                        frequencia frequencia DEFAULT NULL,
+                        categoria  categoria DEFAULT 'OUTRAS',
+                        PRIMARY KEY (id)
+                     )`);
         } catch (e) {
             console.error(e);
         }
@@ -92,112 +117,131 @@ export default class Model {
 
     async selecionaDespesaPeriodo({ ano, mes }) {
 
-        const { pool } = this;
+        const r = await q(`SELECT *
+                           FROM   movimentacao
+                           WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'DESPESA'`
+                         , ano
+                         , mes);
 
-        const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'DESPESA'`, [ano, mes]);
-
-        return r;
+        return r.rows;
 
     }
 
     async selecionaDespesa({ descricao, id } = {}) {
 
-        const { pool } = this;
-
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = ?`, id)
-                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND descricao RLIKE ?`, descricao)
-                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
         if (id) {
-            return r[0] ? r[0] : null;
+            const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`, id);
+            return r.rows[0];
+        } else if (descricao) {
+            const r = await q(`SELECT *
+                               FROM   movimentacao
+                               WHERE  tipo = 'DESPESA' AND descricao LIKE $1`
+                             , `%${descricao}%`); // ok, input string ainda será escapada pela biblioteca
+
+            return r.rows;
         } else {
-            return r;
+            const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
+            return r.rows;
         }
 
     }
 
     async selecionaReceita({ descricao, id } = {}) {
-        const { pool } = this;
-
-        const [r] = id ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = ?`, id)
-                       : descricao ? await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao RLIKE ?`, descricao)
-                                   : await pool.query(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
 
         if (id) {
-            if (r[0]) {
-                const  { id, descricao, valor, data, ..._ } = r[0];
-                return { id, descricao, valor, data };
+            const r = await q("SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1", id);
+            if (r.rows[0]) {
+                const  { id, descricao, valor, data, ..._ } = r.rows[0] || {};
+                return { id, descricao, valor: parseFloat(valor), data };
             }
-
             return null;
+        } else if (descricao) {
+            const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao LIKE $1`, `%${descricao}%`);
+            return r.rows.map(function ({ id, descricao, valor, data }) {
+                return { id, descricao, valor: parseFloat(valor), data };
+            });
         } else {
-            return r.map(function ({ id, descricao, valor, data }) {
-                return { id, descricao, valor, data };
+            const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
+            return r.rows.map(function ({ id, descricao, valor, data }) {
+                return { id, descricao, valor: parseFloat(valor), data };
             });
         }
 
     }
 
     async selecionaReceitaPeriodo({ ano, mes }) {
+        const r = await q(`SELECT *
+                           FROM   movimentacao
+                           WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'RECEITA'`
+                         , ano
+                         , mes);
 
-        const { pool } = this;
-
-        const [r] = await pool.query(`SELECT *
-                                      FROM   movimentacao
-                                      WHERE  YEAR(data) = ? AND MONTH(data) = ? AND tipo = 'RECEITA'`, [ano, mes]);
-
-        return r;
-
+        return r.rows;
     }
 
+    async atualizaDespesa({ categoria, data, descricao, frequencia, id, valor }) {
 
-    async atualizaDespesa({ id, ...info }) {
+        if (!id) {
+            return false;
+        } else {
+            const r = await q(`UPDATE movimentacao SET categoria  = $1,
+                                                       data       = $2,
+                                                       descricao  = $3,
+                                                       frequencia = $4,
+                                                       valor      = $5
+                                    WHERE id = $6
+                                    RETURNING *`
+                             , categoria
+                             , data
+                             , descricao
+                             , frequencia
+                             , valor
+                             , id);
 
-        if (!id) return false;
+            return !!r.rowCount;
+        }
 
-        const pool = this.pool;
-
-        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'DESPESA' AND ?`
-                                    , [info, { id }]);
-
-        return !!r.affectedRows;
     }
 
     async atualizaReceita({ id, ...info }) {
+        if (!id) {
+            return false;
+        } else {
+            const keys   = Object.keys(info);
 
-        if (!id) return false;
+            const last   = keys.length + 1;
+            const params = keys.map(function (k, i) {
+                                        return `${k} = $${i + 1}`;
+                                    })
+                               .join(", ");
 
-        const pool = this.pool;
+            const vals   = keys.map(k => info[k]);
+            const query = `UPDATE movimentacao SET ${params} WHERE tipo = 'RECEITA' AND id = $${last} RETURNING *`;
+            const r     = await q(query
+                                 , ...vals
+                                 , id);
 
-        const [r] = await pool.query(`UPDATE movimentacao SET ? WHERE tipo = 'RECEITA' AND ?`
-                                    , [info, { id }]);
-
-        return !!r.affectedRows;
+            return !!r.rowCount;
+        }
     }
 
     async removeReceita({ id }) {
 
         if (!id) return false;
 
-        const pool = this.pool;
+        const r = await q(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1`
+                         , id);
 
-        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND ?`
-                                    , { id });
-
-        return !!r.affectedRows;
+        return !!r.rowCount;
     }
 
     async removeDespesa({ id }) {
-
         if (!id) return false;
 
-        const pool = this.pool;
+        const r = await q(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`
+                         , id);
 
-        const [r] = await pool.query(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND ?`
-                                    , { id });
-
-        return !!r.affectedRows;
+        return !!r.rowCount;
     }
 
     async cadastraReceita({ data, descricao, valor }) {
@@ -207,16 +251,14 @@ export default class Model {
         if (erros) return erros;
 
         const tipo = RECEITA;
-        const pool = this.pool;
 
-        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
-                                    , { data
-                                      , descricao
-                                      , tipo
-                                      , valor
-                                      });
+        const r = await q(`INSERT INTO movimentacao(categoria, data, descricao, tipo, valor) VALUES ('OUTRAS', $1, $2, $3, $4) RETURNING data, descricao, id, valor`
+                         , data
+                         , descricao
+                         , tipo
+                         , valor);
 
-        return { id: r.insertId };
+        return r.rows[0];
     }
 
     async cadastraDespesa({ categoria, data, descricao, frequencia, valor } = { frequencia: EVENTUAL }) {
@@ -239,40 +281,38 @@ export default class Model {
 
         if (erros) return erros;
 
-        const tipo     = DESPESA;
-        const { pool } = this;
+        const tipo  = DESPESA;
 
-        const [r] = await pool.query(`INSERT INTO movimentacao SET ?`
-                                    , { categoria
-                                      , data
-                                      , descricao
-                                      , tipo
-                                      , valor
-                                      , frequencia: f
-                                      });
+        const r = await q(`INSERT INTO movimentacao (categoria, data, descricao, tipo, valor, frequencia)
+                               VALUES($1, $2, $3, $4, $5, $6)
+                               RETURNING categoria, data, descricao, frequencia, id, valor`
+                         , c
+                         , data
+                         , descricao
+                         , tipo
+                         , valor
+                         , f);
 
-        return { id: r.insertId };
+        return r.rows[0];
     }
 
     async resumoMovimentacao({ ano, mes }) {
 
-        const { pool } = this;
+        const r = await q(`SELECT tipo, SUM(valor) total, categoria
+                           FROM movimentacao
+                           WHERE EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2
+                           GROUP BY categoria, tipo
+                           ORDER BY tipo DESC`
+                         , ano
+                         , mes);
 
-        const [r] = await pool.query(`SELECT tipo, SUM(valor) total, categoria
-                                      FROM movimentacao
-                                      WHERE YEAR(data) = ? AND MONTH(data) = ?
-                                      GROUP BY categoria, tipo
-                                      ORDER BY tipo DESC
-                                      `
-                                    , [ ano
-                                      , mes
-                                      ]);
 
-        const gastos        = r.filter(m => m.tipo === DESPESA);
-        const totalDespesas = gastos.reduce((t, { total: v }) => v + t, 0);
+        const { rows }      = r;
+        const gastos        = rows.filter(m => m.tipo === DESPESA);
+        const totalDespesas = gastos.reduce((t, { total: v }) => parseFloat(v) + t, 0);
 
-        const [receitas]    = r.filter(m => m.tipo === RECEITA);
-        const totalReceitas = (receitas ?? { total: 0 }).total;
+        const [receitas]    = rows.filter(m => m.tipo === RECEITA);
+        const totalReceitas = receitas ? parseFloat(receitas.total) : 0;
 
         const detalhamento  = gastos.reduce((o, { categoria, total }) => ({ ...o, [categoria]: total }), {});
 

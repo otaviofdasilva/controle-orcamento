@@ -5,7 +5,7 @@ import { EVENTUAL
        }              from "../model/frequencia.js";
 
 import Model          from "../model/model.js";
-import pool           from "../db.js";
+
 import { ALIMENTACAO
        , EDUCACAO
        , IMPREVISTOS
@@ -19,7 +19,7 @@ import { ALIMENTACAO
 
 let m;
 beforeEach(async function () {
-    m = new Model(pool);
+    m = new Model();
     await m.preparaTabela();
 });
 
@@ -28,7 +28,7 @@ afterEach(async function() {
 });
 
 after(async function () {
-    await pool.end();
+    process.emit("SIGINT", 0);
 });
 
 describe("Despesas", function () {
@@ -42,32 +42,32 @@ describe("Despesas", function () {
 
     it("atualizaDespesa deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
-        const mov     = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }  = await m.cadastraDespesa(mov);
+        const mov  = { data: new Date(), descricao: "teste", valor: 1 };
 
-        const mov2    = { id:    200
-                        , ...mov
-                        , valor: 100 };
+        const mov2 = { id:    200
+                     , ...mov
+                     , valor: 100
+                     };
 
-        const r       = await m.atualizaDespesa(mov2);
+        const r    = await m.atualizaDespesa(mov2);
         expect(r).to.be.equal(false);
 
     });
 
     it("atualizaDespesa deve retornar true e atualizar registro quando existir movimentação correspondente ao id informado", async function () {
 
-        const mov       = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }    = await m.cadastraDespesa(mov);
+        const mov  = { data: new Date(), descricao: "teste", valor: 1 };
+        const d    = await m.cadastraDespesa(mov);
 
-        const mov2      = { id
-                          , ...mov
-                          , valor: 100 };
+        const mov2 = { ...d
+                     , valor: 100
+                     };
 
-        const r         = await m.atualizaDespesa(mov2);
+        const r    = await m.atualizaDespesa(mov2);
         expect(r).to.be.equal(true);
 
-        const { valor } = await m.selecionaDespesa({ id });
-        expect(valor).to.be.equal(mov2.valor);
+        const { valor } = await m.selecionaDespesa({ id: d.id });
+        expect(valor).to.be.equal(mov2.valor.toFixed(2));
 
     });
 
@@ -152,12 +152,11 @@ describe("Despesas", function () {
 
         const mov    = { data: new Date(), descricao: "teste", valor: 1 };
         const { id } = await m.cadastraDespesa(mov);
-
-        const r   = await m.selecionaDespesa({ id });
+        const r      = await m.selecionaDespesa({ id });
 
         expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
         expect(r.descricao).to.be.equal(mov.descricao);
-        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2));
+        expect(r.valor).to.be.equal(mov.valor.toFixed(2));
         expect(r.id).to.be.equal(id);
         expect(r.frequencia).to.be.equal(EVENTUAL);
 
@@ -262,18 +261,20 @@ describe("Receitas", function () {
         const receitas = await m.selecionaReceita({ descricao: "teste" });
         expect(receitas).to.be.lengthOf(2);
         expect(receitas.map(r => r.descricao)).deep.to.equal(["um teste", "outro teste"]);
+
     });
 
     it("selecionaReceita com argumento com id deve retornar a receita de id correspondente", async function () {
 
         const mov = { data: new Date(), descricao: "teste", valor: 1 };
+        const _   = await m.cadastraReceita(mov);
         const i   = await m.cadastraReceita(mov);
 
-        const r   = await m.selecionaReceita({ id: i.id });
+        const r   = await m.selecionaReceita(i);
 
         expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
         expect(r.descricao).to.be.equal(mov.descricao);
-        expect(r.valor.toFixed(2)).to.be.equal(mov.valor.toFixed(2));
+        expect(r.valor).to.be.equal(mov.valor);
         expect(r.id).to.be.equal(i.id);
 
     });
@@ -301,12 +302,12 @@ describe("Receitas", function () {
 
     it("atualizaReceita deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
-        const mov     = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }  = await m.cadastraReceita(mov);
+        const mov  = { data: new Date(), descricao: "teste", valor: 1 };
+        const _    = await m.cadastraReceita(mov);
 
-        const mov2    = { id:    200
-                        , ...mov
-                        , valor: 100 };
+        const mov2 = { id:    200
+                     , ...mov
+                     , valor: 100 };
 
         const r       = await m.atualizaReceita(mov2);
         expect(r).to.be.equal(false);
