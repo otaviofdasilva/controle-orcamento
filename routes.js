@@ -1,10 +1,9 @@
 import Model from "./model/model.js";
-import pool  from "./db.js";
 
 
 export default async function routes(app) {
 
-    const m = new Model(pool);
+    const m = new Model;
     await m.preparaTabela();
 
     app.delete("/api/receitas/:id", async function(request, response) {
