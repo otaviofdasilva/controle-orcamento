@@ -136,7 +136,7 @@ export default class Model {
 
         if (id) {
             const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`, id);
-            return r.rows[0];
+            return r.rows[0] || null;
         } else if (descricao) {
             const r = await q(`SELECT *
                                FROM   movimentacao
