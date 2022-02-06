@@ -7,7 +7,7 @@ export default async function routes(app) {
     const m = new Model(pool);
     await m.preparaTabela();
 
-    app.delete("/controle-orcamento/api/receitas/:id", async function(request, response) {
+    app.delete("/api/receitas/:id", async function(request, response) {
         const id = parseInt(request.params.id);
 
         try {
@@ -19,7 +19,7 @@ export default async function routes(app) {
         }
     });
 
-    app.get("/controle-orcamento/api/receitas/:ano/:mes", async function(request, response) {
+    app.get("/api/receitas/:ano/:mes", async function(request, response) {
         const { ano, mes } = request.params;
 
         try {
@@ -32,7 +32,7 @@ export default async function routes(app) {
 
     });
 
-    app.get("/controle-orcamento/api/receitas/:id?", async function(request, response) {
+    app.get("/api/receitas/:id?", async function(request, response) {
         const id        = parseInt(request.params.id);
         const descricao = request.query.descricao;
         try {
@@ -44,7 +44,7 @@ export default async function routes(app) {
         }
     });
 
-    app.patch("/controle-orcamento/api/receitas/:id", async function(request, response) {
+    app.patch("/api/receitas/:id", async function(request, response) {
         const id                = parseInt(request.params.id);
         const { data, ...info } = request.body;
 
@@ -66,7 +66,7 @@ export default async function routes(app) {
         }
     });
 
-    app.post("/controle-orcamento/api/receitas", async function(request, response) {
+    app.post("/api/receitas", async function(request, response) {
 
         const { data, ...info } = request.body;
 
@@ -90,7 +90,7 @@ export default async function routes(app) {
         }
     });
 
-    app.delete("/controle-orcamento/api/despesas/:id", async function(request, response) {
+    app.delete("/api/despesas/:id", async function(request, response) {
         const id = parseInt(request.params.id);
 
         try {
@@ -103,7 +103,7 @@ export default async function routes(app) {
     });
 
 
-    app.get("/controle-orcamento/api/despesas/:ano/:mes", async function(request, response) {
+    app.get("/api/despesas/:ano/:mes", async function(request, response) {
         const { ano, mes } = request.params;
 
         try {
@@ -116,7 +116,7 @@ export default async function routes(app) {
 
     });
 
-    app.get("/controle-orcamento/api/despesas/:id?", async function(request, response) {
+    app.get("/api/despesas/:id?", async function(request, response) {
         const id        = parseInt(request.params.id);
         const descricao = request.query.descricao;
 
@@ -129,7 +129,7 @@ export default async function routes(app) {
         }
     });
 
-    app.patch("/controle-orcamento/api/despesas/:id", async function(request, response) {
+    app.patch("/api/despesas/:id", async function(request, response) {
         const id                = parseInt(request.params.id);
         const { data, ...info } = request.body;
 
@@ -151,7 +151,7 @@ export default async function routes(app) {
         }
     });
 
-    app.post("/controle-orcamento/api/despesas", async function(request, response) {
+    app.post("/api/despesas", async function(request, response) {
         const { data, ...info } = request.body;
 
         try {
@@ -174,7 +174,7 @@ export default async function routes(app) {
         }
     });
 
-    app.get("/controle-orcamento/api/resumo/:ano/:mes", async function(request, response) {
+    app.get("/api/resumo/:ano/:mes", async function(request, response) {
 
         const { ano, mes } = request.params;
 
