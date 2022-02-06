@@ -14,6 +14,4 @@ app.use(function (_, response, next) {
 
 routes(app);
 
-app.listen(process.env.PORT, function () {
-    console.log("localhost @ 3000");
-});
+app.listen(process.env.PORT);
