@@ -1,10 +1,4 @@
-import Model from "./model/model.js";
-
-
-export default async function routes(app) {
-
-    const m = new Model;
-    await m.preparaTabela();
+export default async function movimentacoes(app, m) {
 
     app.delete("/api/receitas/:id", async function(request, response) {
         const id = parseInt(request.params.id);

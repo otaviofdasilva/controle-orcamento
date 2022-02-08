@@ -1,17 +1,32 @@
-import express from "express";
-import routes  from "./routes.js";
+import Movimentacao  from "./model/movimentacao.js";
+import Usuario       from "./model/usuario.js";
+
+import acesso        from "./routes/acesso.js";
+import express       from "express";
+import movimentacoes from "./routes/movimentacoes.js";
 
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+(async function main() {
 
-app.use(function (_, response, next) {
-    response.setHeader("Access-Control-Allow-Origin", "*");
-    response.removeHeader("x-powered-by");
-    next();
-});
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
 
-routes(app);
+    app.use(function (_, response, next) {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.removeHeader("x-powered-by");
+        next();
+    });
 
-app.listen(process.env.PORT);
+    const m = new Movimentacao;
+    await m.init();
+    movimentacoes(app, m);
+
+
+    const u = new Usuario;
+    await u.init();
+    acesso(app, u);
+
+    app.listen(process.env.PORT);
+
+}());

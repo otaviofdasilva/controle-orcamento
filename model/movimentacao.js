@@ -1,32 +1,8 @@
-import { default as pg }        from "pg";
-
+import q                        from "./db.js";
 import { categorias, OUTRAS }   from "./categoria.js";
 import { FIXA,       EVENTUAL } from "./frequencia.js";
 import { DESPESA,    RECEITA }  from "./tipo.js";
 
-
-const { Pool } = pg;
-// const pool     = new Pool({ connectionTimeoutMillis: 30000
-//                           , database:                process.env["DB_NAME"].trim()
-//                           , host:                    process.env["DB_HOST"].trim()
-//                           , password:                process.env["DB_PASSWORD"].trim()
-//                           , port:                    process.env["DB_PORT"].trim()
-//                           , user:                    process.env["DB_USER"].trim()
-//                           });
-
-const pool     = new Pool({ connectionString: process.env.DATABASE_URL
-                          , ssl: { rejectUnauthorized: false
-                                 } 
-                          });
-
-async function fechaPool() {
-    console.log("encerrando pool de conexões.");
-    await pool.end();
-    console.log("pool encerrado.");
-    process.exit(1);
-}
-
-process.on("SIGINT", fechaPool);
 
 const GASTOS = { ALIMENTACAO: 0
                , EDUCACAO:    0
@@ -73,25 +49,13 @@ function valida({ data, descricao, valor, }, ...vs) {
 
 }
 
-export async function q(query, ...params) {
-    return new Promise(function (resolve, reject) {
-        pool.query(query, params, function (e, _) {
-            if (e) return reject(e);
-            resolve(_);
-        });
-    });
-}
+export default class Movimentacao {
 
-export default class Model {
-
-    async destroiTabela() {
+    async destroy() {
 
         try {
 
             await q(`DROP TABLE IF EXISTS movimentacao`);
-            await q(`DROP TYPE categoria`);
-            await q(`DROP TYPE frequencia`);
-            await q(`DROP TYPE tipo`);
 
         } catch (e) {
             console.error(e);
@@ -99,20 +63,18 @@ export default class Model {
 
     }
 
-    async preparaTabela() {
+    async init() {
 
         try {
-            await q(`CREATE TYPE tipo AS ENUM('DESPESA', 'RECEITA')`);
-            await q(`CREATE TYPE frequencia AS ENUM('FIXA', 'EVENTUAL')`);
-            await q(`CREATE TYPE categoria AS ENUM('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS')`);
+
             await q(`CREATE TABLE IF NOT EXISTS movimentacao (
                         id         SERIAL,
                         descricao  VARCHAR(100) NOT NULL,
                         valor      DECIMAL(10,2) NOT NULL,
                         data       DATE NOT NULL,
-                        tipo       tipo NOT NULL,
-                        frequencia frequencia DEFAULT NULL,
-                        categoria  categoria DEFAULT 'OUTRAS',
+                        tipo       VARCHAR(20) CHECK (tipo IN ('DESPESA', 'RECEITA')) NOT NULL,
+                        frequencia VARCHAR(20) CHECK (frequencia IN ('FIXA', 'EVENTUAL', NULL)) DEFAULT NULL,
+                        categoria  VARCHAR(20) CHECK (categoria IN ('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS')) DEFAULT 'OUTRAS',
                         PRIMARY KEY (id)
                      )`);
         } catch (e) {

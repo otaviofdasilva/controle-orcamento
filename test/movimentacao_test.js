@@ -4,7 +4,7 @@ import { EVENTUAL
        , FIXA
        }              from "../model/frequencia.js";
 
-import Model          from "../model/model.js";
+import Movimentacao   from "../model/movimentacao.js";
 
 import { ALIMENTACAO
        , EDUCACAO
@@ -19,12 +19,12 @@ import { ALIMENTACAO
 
 let m;
 beforeEach(async function () {
-    m = new Model();
-    await m.preparaTabela();
+    m = new Movimentacao; 
+    await m.init();
 });
 
 afterEach(async function() {
-    await m.destroiTabela();
+    await m.destroy();
 });
 
 after(async function () {
