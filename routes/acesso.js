@@ -1,21 +1,18 @@
 import passport from "passport";
 import               "../auth.js";
+import jwt      from "jsonwebtoken";
+
+function token(email) {
+    return jwt.sign(email, process.env.ASSINATURA);
+}
 
 export default async function acesso(app, m) {
 
     app.route("/api/usuarios/login")
        .post(passport.authenticate("local", { session: false })
-            , async function(_, response) {
+            , async function(request, response) {
+                response.setHeader("auth", token(request.body.email));
                 response.sendStatus(200);
-                //   try {
-                //       const r = await m.selecionaUsuario(request.body);
-                //       if (!r) throw new Error("não autorizado");
-                //       console.log(new Date().toISOString(), "autorizado", r);
-                //       response.sendStatus(200);
-                //   } catch (e) {
-                //       console.error(new Date().toISOString(), "não autorizado");
-                //       response.status(401).json({ erro: e.message });
-                //   }
               });
 
     app.route("/api/usuarios")

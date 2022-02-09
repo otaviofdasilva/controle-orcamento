@@ -52,12 +52,25 @@ async function remove({ email }) {
     return !!r.rowCount;
 }
 
+async function verificaEmail(email) {
+    const { rowCount, rows } = await q(`SELECT email, hash
+                                        FROM   usuarios
+                                        WHERE  email = $1
+                                        LIMIT  1`
+                                      , email);
+
+    const [usuario] = rows;
+
+    if (!usuario) return Promise.resolve(null);
+    return Promise.resolve(email);
+}
+
 async function seleciona({ email, password }) {
     const { rowCount, rows } = await q(`SELECT email, hash
                                         FROM   usuarios
                                         WHERE  email = $1
                                         LIMIT  1`
-                                        , email);
+                                      , email);
 
     const [usuario] = rows;
 
@@ -72,4 +85,5 @@ export default { altera
                , init
                , remove
                , seleciona
+               , verificaEmail
                }
