@@ -4,6 +4,7 @@ import Usuario       from "./model/usuario.js";
 import acesso        from "./routes/acesso.js";
 import express       from "express";
 import movimentacoes from "./routes/movimentacoes.js";
+import auth          from "./auth.js";
 
 
 (async function main() {
@@ -18,14 +19,13 @@ import movimentacoes from "./routes/movimentacoes.js";
         next();
     });
 
-    const m = new Movimentacao;
-    await m.init();
-    movimentacoes(app, m);
+    await Movimentacao.init();
+    movimentacoes(app, Movimentacao);
 
 
-    const u = new Usuario;
-    await u.init();
-    acesso(app, u);
+    await Usuario.init();
+    auth(Usuario);
+    acesso(app, Usuario);
 
     app.listen(process.env.PORT);
 

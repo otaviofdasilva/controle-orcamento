@@ -23,8 +23,11 @@
   },
   "homepage": "https://github.com/otaviofdasilva/controle-orcamento#readme",
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "express": "^4.17.2",
     "mysql2": "^2.3.3",
+    "passport": "^0.5.2",
+    "passport-local": "^1.0.0",
     "pg": "^8.7.3"
   },
   "devDependencies": {

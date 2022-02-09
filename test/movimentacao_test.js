@@ -17,14 +17,12 @@ import { ALIMENTACAO
        }              from "../model/categoria.js";
 
 
-let m;
 beforeEach(async function () {
-    m = new Movimentacao; 
-    await m.init();
+    await Movimentacao.init();
 });
 
 afterEach(async function() {
-    await m.destroy();
+    await Movimentacao.destroy();
 });
 
 after(async function () {
@@ -35,7 +33,7 @@ describe("Despesas", function () {
     it("atualizaDespesa deve retornar false quando id não estiver presente no objeto passado como argumento", async function () {
 
         const mov = { valor : 100 };
-        const r   = await m.atualizaDespesa(mov);
+        const r   = await Movimentacao.atualizaDespesa(mov);
         expect(r).to.be.equal(false);
 
     });
@@ -49,7 +47,7 @@ describe("Despesas", function () {
                      , valor: 100
                      };
 
-        const r    = await m.atualizaDespesa(mov2);
+        const r    = await Movimentacao.atualizaDespesa(mov2);
         expect(r).to.be.equal(false);
 
     });
@@ -57,16 +55,16 @@ describe("Despesas", function () {
     it("atualizaDespesa deve retornar true e atualizar registro quando existir movimentação correspondente ao id informado", async function () {
 
         const mov  = { data: new Date(), descricao: "teste", valor: 1 };
-        const d    = await m.cadastraDespesa(mov);
+        const d    = await Movimentacao.cadastraDespesa(mov);
 
         const mov2 = { ...d
                      , valor: 100
                      };
 
-        const r    = await m.atualizaDespesa(mov2);
+        const r    = await Movimentacao.atualizaDespesa(mov2);
         expect(r).to.be.equal(true);
 
-        const { valor } = await m.selecionaDespesa({ id: d.id });
+        const { valor } = await Movimentacao.selecionaDespesa({ id: d.id });
         expect(valor).to.be.equal(mov2.valor.toFixed(2));
 
     });
@@ -74,12 +72,12 @@ describe("Despesas", function () {
     it("cadastraDespesa deve aceitar apenas valor positivo", async function () {
 
         const v1 = -1;
-        const r1 = await m.cadastraDespesa({ valor: v1 });
+        const r1 = await Movimentacao.cadastraDespesa({ valor: v1 });
         expect(r1.valor.valido).to.equal(false);
         expect(r1.valor.valor).to.equal(v1);
 
         const v2 = 0;
-        const r2 = await m.cadastraDespesa({ valor: v2 });
+        const r2 = await Movimentacao.cadastraDespesa({ valor: v2 });
         expect(r2.valor.valido).to.equal(false);
         expect(r2.valor.valor).to.equal(v2);
 
@@ -87,7 +85,7 @@ describe("Despesas", function () {
 
     it("cadastraDespesa não deve aceitar descrição vazia", async function () {
 
-        const r1 = await m.cadastraDespesa({ descricao: "" });
+        const r1 = await Movimentacao.cadastraDespesa({ descricao: "" });
         expect(r1.descricao.valido).to.equal(false);
         expect(r1.descricao.valor).to.equal("");
 
@@ -95,29 +93,29 @@ describe("Despesas", function () {
 
     it("cadastraDespesa não deve aceitar data que não seja instanceof Date", async function () {
 
-        const r1 = await m.cadastraDespesa({ data: "2020-01-01" });
+        const r1 = await Movimentacao.cadastraDespesa({ data: "2020-01-01" });
         expect(r1.data.valido).to.equal(false);
 
     });
 
     it("cadastraDespesa não deve aceitar frequencia que seja diferente de FIXA | EVENTUAL", async function () {
-        const r = await m.cadastraDespesa({ frequencia: "foobar" });
+        const r = await Movimentacao.cadastraDespesa({ frequencia: "foobar" });
         expect(r.frequencia.valido).to.equal(false);
 
-        const r2 = await m.cadastraDespesa({ frequencia: FIXA });
+        const r2 = await Movimentacao.cadastraDespesa({ frequencia: FIXA });
         expect(r2.frequencia).to.be.undefined;
 
-        const r3 = await m.cadastraDespesa({ frequencia: EVENTUAL });
+        const r3 = await Movimentacao.cadastraDespesa({ frequencia: EVENTUAL });
         expect(r3.frequencia).to.be.undefined;
     });
 
     it("cadastraDespesa não deve aceitar categoria que seja diferente de ALIMENTACAO | SAUDE | MORADIA | TRANSPORTE | EDUCACAO | LAZER | IMPREVISTOS | OUTRAS", async function () {
 
-        const r = await m.cadastraDespesa({ categoria: "foobar" });
+        const r = await Movimentacao.cadastraDespesa({ categoria: "foobar" });
         expect(r.categoria.valido).to.equal(false);
 
         categorias.forEach(async function (categoria) {
-            const r = await m.cadastraDespesa({ categoria });
+            const r = await Movimentacao.cadastraDespesa({ categoria });
             expect(r.categoria).to.be.undefined;
         });
 
@@ -125,15 +123,15 @@ describe("Despesas", function () {
 
     it("cadastraDespesa insere frequencia EVENTUAL como valor padrão", async function () {
 
-        const { id } = await m.cadastraDespesa({ data: new Date(), descricao: "teste", valor: 1 });
-        const d      = await m.selecionaDespesa({ id });
+        const { id } = await Movimentacao.cadastraDespesa({ data: new Date(), descricao: "teste", valor: 1 });
+        const d      = await Movimentacao.selecionaDespesa({ id });
 
         expect(d.frequencia).to.equal(EVENTUAL);
     });
 
     it("cadastraDespesa deve retornar um objeto com o id inserido na tabela", async function () {
 
-        const r1 = await m.cadastraDespesa({ data: new Date(), descricao: "teste", valor: 1 });
+        const r1 = await Movimentacao.cadastraDespesa({ data: new Date(), descricao: "teste", valor: 1 });
         expect(r1).to.have.property("id");
 
     });
@@ -141,18 +139,18 @@ describe("Despesas", function () {
     it("selecionaDespesa sem argumento deve retornar um array com todas as despesas das movimentações", async function () {
 
         const mov = { data: new Date(), descricao: "teste", valor: 1 };
-        await m.cadastraDespesa(mov);
-        await m.cadastraDespesa(mov);
-        await m.cadastraDespesa(mov);
-        expect(await m.selecionaDespesa()).to.be.lengthOf(3);
+        await Movimentacao.cadastraDespesa(mov);
+        await Movimentacao.cadastraDespesa(mov);
+        await Movimentacao.cadastraDespesa(mov);
+        expect(await Movimentacao.selecionaDespesa()).to.be.lengthOf(3);
 
     });
 
     it("selecionaDespesa com argumento com id deve retornar a despesa de id correspondente", async function () {
 
         const mov    = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id } = await m.cadastraDespesa(mov);
-        const r      = await m.selecionaDespesa({ id });
+        const { id } = await Movimentacao.cadastraDespesa(mov);
+        const r      = await Movimentacao.selecionaDespesa({ id });
 
         expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
         expect(r.descricao).to.be.equal(mov.descricao);
@@ -164,10 +162,10 @@ describe("Despesas", function () {
 
     it("selecionaDespesa com argumento com descricao deve retornar um array de despesas que contenham esta descricao", async function () {
 
-        await m.cadastraDespesa({ data: new Date(), descricao: "um teste",    valor: 1 });
-        await m.cadastraDespesa({ data: new Date(), descricao: "outro teste", valor: 400 });
-        await m.cadastraDespesa({ data: new Date(), descricao: "...",         valor: 20 });
-        const despesas = await m.selecionaDespesa({ descricao: "teste" });
+        await Movimentacao.cadastraDespesa({ data: new Date(), descricao: "um teste",    valor: 1 });
+        await Movimentacao.cadastraDespesa({ data: new Date(), descricao: "outro teste", valor: 400 });
+        await Movimentacao.cadastraDespesa({ data: new Date(), descricao: "...",         valor: 20 });
+        const despesas = await Movimentacao.selecionaDespesa({ descricao: "teste" });
         expect(despesas).to.be.lengthOf(2);
         expect(despesas.map(d => d.descricao)).deep.to.equal(["um teste", "outro teste"]);
 
@@ -175,11 +173,11 @@ describe("Despesas", function () {
 
     it("selecionaDespesaPeriodo deve retornar um array de despesas do mes e ano passados como argumentos", async function () {
 
-        await m.cadastraDespesa({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
-        await m.cadastraDespesa({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
-        await m.cadastraDespesa({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
 
-        const despesas = await m.selecionaDespesaPeriodo({ ano: 2020, mes: 2 });
+        const despesas = await Movimentacao.selecionaDespesaPeriodo({ ano: 2020, mes: 2 });
 
         expect(despesas).to.be.lengthOf(2);
         expect(new Set(despesas.map(d => d.descricao))).deep.to.equal(new Set(["um teste", "outro teste"]));
@@ -189,16 +187,16 @@ describe("Despesas", function () {
     it("removeDespesa deve retornar true e remover registro quando existir movimentação correspondente ao id informado", async function () {
 
         const mov      = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }   = await m.cadastraDespesa(mov);
+        const { id }   = await Movimentacao.cadastraDespesa(mov);
 
-        const removido = await m.removeDespesa({ id });
+        const removido = await Movimentacao.removeDespesa({ id });
         expect(removido).to.be.equal(true);
 
     });
 
     it("removeDespesa deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
-        const removido = await m.removeDespesa({ id: 10000000 });
+        const removido = await Movimentacao.removeDespesa({ id: 10000000 });
         expect(removido).to.be.equal(false);
 
     });
@@ -209,12 +207,12 @@ describe("Receitas", function () {
     it("cadastraReceita deve aceitar apenas valor positivo", async function () {
 
         const v1 = -1;
-        const r1 = await m.cadastraReceita({ valor: v1 });
+        const r1 = await Movimentacao.cadastraReceita({ valor: v1 });
         expect(r1.valor.valido).to.equal(false);
         expect(r1.valor.valor).to.equal(v1);
 
         const v2 = 0;
-        const r2 = await m.cadastraReceita({ valor: v2 });
+        const r2 = await Movimentacao.cadastraReceita({ valor: v2 });
         expect(r2.valor.valido).to.equal(false);
         expect(r2.valor.valor).to.equal(v2);
 
@@ -222,7 +220,7 @@ describe("Receitas", function () {
 
     it("cadastraReceita não deve aceitar descrição vazia", async function () {
 
-        const r1 = await m.cadastraReceita({ descricao: "" });
+        const r1 = await Movimentacao.cadastraReceita({ descricao: "" });
         expect(r1.descricao.valido).to.equal(false);
         expect(r1.descricao.valor).to.equal("");
 
@@ -230,14 +228,14 @@ describe("Receitas", function () {
 
     it("cadastraReceita não deve aceitar data que não seja instanceof Date", async function () {
 
-        const r1 = await m.cadastraReceita({ data: "2020-01-01" });
+        const r1 = await Movimentacao.cadastraReceita({ data: "2020-01-01" });
         expect(r1.data.valido).to.equal(false);
 
     });
 
     it("cadastraReceita deve retornar um objeto com o id inserido na tabela", async function () {
 
-        const r1 = await m.cadastraReceita({ data: new Date(), descricao: "teste", valor: 1 });
+        const r1 = await Movimentacao.cadastraReceita({ data: new Date(), descricao: "teste", valor: 1 });
         expect(r1.id).to.be.equal(1);
 
     });
@@ -246,19 +244,20 @@ describe("Receitas", function () {
     it("selecionaReceita sem argumento deve retornar um array com todas as receitas das movimentações", async function () {
 
         const mov = { data: new Date(), descricao: "teste", valor: 1 };
-        await m.cadastraReceita(mov);
-        await m.cadastraReceita(mov);
-        await m.cadastraReceita(mov);
-        expect(await m.selecionaReceita()).to.be.lengthOf(3);
+        await Movimentacao.cadastraReceita(mov);
+        await Movimentacao.cadastraReceita(mov);
+        await Movimentacao.cadastraReceita(mov);
+        const rs  = await Movimentacao.selecionaReceita();
+        expect(rs).to.be.lengthOf(3);
 
     });
 
     it("selecionaReceita com argumento com descricao deve retornar um array de receitas que contenham esta descricao", async function () {
 
-        await m.cadastraReceita({ data: new Date(), descricao: "um teste",    valor: 1 });
-        await m.cadastraReceita({ data: new Date(), descricao: "outro teste", valor: 400 });
-        await m.cadastraReceita({ data: new Date(), descricao: "...",         valor: 20 });
-        const receitas = await m.selecionaReceita({ descricao: "teste" });
+        await Movimentacao.cadastraReceita({ data: new Date(), descricao: "um teste",    valor: 1 });
+        await Movimentacao.cadastraReceita({ data: new Date(), descricao: "outro teste", valor: 400 });
+        await Movimentacao.cadastraReceita({ data: new Date(), descricao: "...",         valor: 20 });
+        const receitas = await Movimentacao.selecionaReceita({ descricao: "teste" });
         expect(receitas).to.be.lengthOf(2);
         expect(receitas.map(r => r.descricao)).deep.to.equal(["um teste", "outro teste"]);
 
@@ -267,10 +266,10 @@ describe("Receitas", function () {
     it("selecionaReceita com argumento com id deve retornar a receita de id correspondente", async function () {
 
         const mov = { data: new Date(), descricao: "teste", valor: 1 };
-        const _   = await m.cadastraReceita(mov);
-        const i   = await m.cadastraReceita(mov);
+        const _   = await Movimentacao.cadastraReceita(mov);
+        const i   = await Movimentacao.cadastraReceita(mov);
 
-        const r   = await m.selecionaReceita(i);
+        const r   = await Movimentacao.selecionaReceita(i);
 
         expect(r.data.toLocaleDateString()).to.be.equal(mov.data.toLocaleDateString());
         expect(r.descricao).to.be.equal(mov.descricao);
@@ -281,11 +280,11 @@ describe("Receitas", function () {
 
     it("selecionaReceitaPeriodo deve retornar um array de receitas do mes e ano passados como argumentos", async function () {
 
-        await m.cadastraReceita({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
-        await m.cadastraReceita({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
-        await m.cadastraReceita({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-12"), descricao: "um teste",    valor: 1 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-09"), descricao: "outro teste", valor: 400 });
+        await Movimentacao.cadastraReceita({ data: new Date("2021-01-17"), descricao: "...",         valor: 20 });
 
-        const receitas = await m.selecionaReceitaPeriodo({ ano: 2020, mes: 2 });
+        const receitas = await Movimentacao.selecionaReceitaPeriodo({ ano: 2020, mes: 2 });
 
         expect(receitas).to.be.lengthOf(2);
         expect(new Set(receitas.map(r => r.descricao))).deep.to.equal(new Set(["um teste", "outro teste"]));
@@ -295,7 +294,7 @@ describe("Receitas", function () {
     it("atualizaReceita deve retornar false quando id não estiver presente no objeto passado como argumento", async function () {
 
         const mov = { valor : 100 };
-        const r   = await m.atualizaReceita(mov);
+        const r   = await Movimentacao.atualizaReceita(mov);
         expect(r).to.be.equal(false);
 
     });
@@ -303,13 +302,13 @@ describe("Receitas", function () {
     it("atualizaReceita deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
         const mov  = { data: new Date(), descricao: "teste", valor: 1 };
-        const _    = await m.cadastraReceita(mov);
+        const _    = await Movimentacao.cadastraReceita(mov);
 
         const mov2 = { id:    200
                      , ...mov
                      , valor: 100 };
 
-        const r       = await m.atualizaReceita(mov2);
+        const r       = await Movimentacao.atualizaReceita(mov2);
         expect(r).to.be.equal(false);
 
     });
@@ -317,16 +316,16 @@ describe("Receitas", function () {
     it("atualizaReceita deve retornar true e atualizar registro quando existir movimentação correspondente ao id informado", async function () {
 
         const mov       = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }    = await m.cadastraReceita(mov);
+        const { id }    = await Movimentacao.cadastraReceita(mov);
 
         const mov2      = { id
                           , ...mov
                           , valor: 100 };
 
-        const r         = await m.atualizaReceita(mov2);
+        const r         = await Movimentacao.atualizaReceita(mov2);
         expect(r).to.be.equal(true);
 
-        const { valor } = await m.selecionaReceita({ id });
+        const { valor } = await Movimentacao.selecionaReceita({ id });
         expect(valor).to.be.equal(mov2.valor);
 
     });
@@ -334,16 +333,16 @@ describe("Receitas", function () {
     it("removeReceita deve retornar true e remover registro quando existir movimentação correspondente ao id informado", async function () {
 
         const mov      = { data: new Date(), descricao: "teste", valor: 1 };
-        const { id }   = await m.cadastraReceita(mov);
+        const { id }   = await Movimentacao.cadastraReceita(mov);
 
-        const removido = await m.removeReceita({ id });
+        const removido = await Movimentacao.removeReceita({ id });
         expect(removido).to.be.equal(true);
 
     });
 
     it("removeReceita deve retornar false quando não existir movimentação correspondente ao id informado", async function () {
 
-        const removido = await m.removeReceita({ id: 10000000 });
+        const removido = await Movimentacao.removeReceita({ id: 10000000 });
         expect(removido).to.be.equal(false);
 
     });
@@ -353,51 +352,51 @@ describe("Receitas", function () {
 describe("Resumo Movimentação", function () {
     it("resumoMovimentacao deve retornar valor total das receitas no mês e ano informados", async function () {
 
-        await m.cadastraReceita({ data: new Date("2020-02-12"), descricao: "prêmio loteria", valor: 1 });
-        await m.cadastraReceita({ data: new Date("2020-02-09"), descricao: "aluguel",        valor: 400 });
-        await m.cadastraReceita({ data: new Date("2020-01-01"), descricao: "salario",        valor: 1400 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-12"), descricao: "prêmio loteria", valor: 1 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-09"), descricao: "aluguel",        valor: 400 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-01-01"), descricao: "salario",        valor: 1400 });
 
-        await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
-        await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
-        await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
-        const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+        const r = await Movimentacao.resumoMovimentacao({ ano: 2020, mes: 2 });
         expect(r.totalReceitas).to.be.equal(401);
 
     });
 
     it("resumoMovimentacao deve retornar valor total das despesas no mês e ano informados", async function () {
 
-        await m.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
-        await m.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
-        await m.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
 
-        await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
-        await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
-        await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
-        const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+        const r = await Movimentacao.resumoMovimentacao({ ano: 2020, mes: 2 });
         expect(r.totalDespesas).to.be.equal(2600);
 
     });
 
     it("resumoMovimentacao deve retornar saldo do mês e ano informados", async function () {
 
-        await m.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
-        await m.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
-        await m.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-02"), descricao: "bilhete loteria", valor: 4.5 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-02-19"), descricao: "aluguel",         valor: 500 });
+        await Movimentacao.cadastraReceita({ data: new Date("2020-11-01"), descricao: "roupas",          valor: 100 });
 
-        await m.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
-        await m.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
-        await m.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-22"), categoria: "MORADIA", descricao: "nova casa", valor: 2000 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-02-19"), categoria: "LAZER",   descricao: "club bar",  valor: 600 });
+        await Movimentacao.cadastraDespesa({ data: new Date("2020-01-11"), categoria: "SAUDE",   descricao: "aspirina",  valor: 5 });
 
-        const r = await m.resumoMovimentacao({ ano: 2020, mes: 2 });
+        const r = await Movimentacao.resumoMovimentacao({ ano: 2020, mes: 2 });
         expect(r.saldo).to.be.equal(504.5 - 2600);
 
     });
 
     it("resumoMovimentacao deve retornar objeto seguindo o schema mesmo sem movimentação no mês e ano informados", async function () {
-        const r = await m.resumoMovimentacao({ ano: 1999, mes: 1 });
+        const r = await Movimentacao.resumoMovimentacao({ ano: 1999, mes: 1 });
         expect(r.saldo).to.be.equal(0);
         expect(r.totalDespesas).to.be.equal(0);
         expect(r.totalReceitas).to.be.equal(0);
