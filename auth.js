@@ -12,20 +12,29 @@ export default async function auth(m) {
             if (!r) throw new Error("não autorizado");
             done(null, email);
         } catch (e) {
-            done(e);
+            console.error(new Date().toISOString(), "autoriza", e);
+            done("não autorizado");
         }
     }
 
     async function verifica(token, done) {
         try {
-            const email = jwt.verify(token, process.env.ASSINATURA);
-            console.log(new Date().toISOString(), email);
+            console.log(new Date().toISOString(), "verifica", token);
+
+            const { id } = jwt.verify(token, process.env.ASSINATURA);
+            console.log(new Date().toISOString(), "verifica", id);
+
+            const invalidado = await m.buscaToken(token);
+            if (invalidado) throw new Error("autorização expirada");
+
+            const [email] = id.split("::");
             const r = await m.verificaEmail(email);
-            console.log(new Date().toISOString(), r);
             if (!r) throw new Error("não autorizado");
-            done(null, email);
+
+            done(null, email, { token });
         } catch (e) {
-            done(e);
+            console.error(new Date().toISOString(), e);
+            done("não autorizado");
         }
     }
 

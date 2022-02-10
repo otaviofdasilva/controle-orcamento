@@ -31,8 +31,8 @@ async function altera({ email, password }) {
     const r = await q(`UPDATE usuarios 
                         SET    hash  = $2
                         WHERE  email = $1`
-                        , email
-                        , password);
+                     , email
+                     , password);
 
     return !!r.rowCount;
 }
@@ -47,7 +47,7 @@ async function remove({ email }) {
     const r = await q(`DELETE 
                         FROM   usuarios 
                         WHERE  email = $1`
-                        , email);
+                     , email);
 
     return !!r.rowCount;
 }

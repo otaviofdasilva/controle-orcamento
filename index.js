@@ -2,9 +2,10 @@ import Movimentacao  from "./model/movimentacao.js";
 import Usuario       from "./model/usuario.js";
 
 import acesso        from "./routes/acesso.js";
+import auth          from "./auth.js";
 import express       from "express";
 import movimentacoes from "./routes/movimentacoes.js";
-import auth          from "./auth.js";
+import Token         from "./model/token.js"
 
 
 (async function main() {
@@ -22,10 +23,11 @@ import auth          from "./auth.js";
     await Movimentacao.init();
     movimentacoes(app, Movimentacao);
 
-
+    await Token.init();
     await Usuario.init();
-    auth(Usuario);
-    acesso(app, Usuario);
+    const m = { ...Token, ...Usuario };
+    auth(m);
+    acesso(app, m);
 
     app.listen(process.env.PORT);
 
