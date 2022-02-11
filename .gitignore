@@ -106,3 +106,4 @@ dist
 .*.swp
 *.sh
 *.ps1
+.vscode

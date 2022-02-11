@@ -1,66 +1,64 @@
-import q                        from "./db.js";
-import { categorias, OUTRAS }   from "./categoria.js";
-import { FIXA,       EVENTUAL } from "./frequencia.js";
-import { DESPESA,    RECEITA }  from "./tipo.js";
+import q from "./db.js";
+import { categorias, OUTRAS } from "./categoria.js";
+import { FIXA, EVENTUAL } from "./frequencia.js";
+import { DESPESA, RECEITA } from "./tipo.js";
 
+const GASTOS = {
+  ALIMENTACAO: 0,
+  EDUCACAO: 0,
+  IMPREVISTOS: 0,
+  LAZER: 0,
+  MORADIA: 0,
+  OUTRAS: 0,
+  SAUDE: 0,
+  TRANSPORTE: 0,
+};
 
-const GASTOS = { ALIMENTACAO: 0
-               , EDUCACAO:    0
-               , IMPREVISTOS: 0
-               , LAZER:       0
-               , MORADIA:     0
-               , OUTRAS:      0
-               , SAUDE:       0
-               , TRANSPORTE:  0
-               };
+function valida({ data, descricao, valor }, ...vs) {
+  const dataInvalida = {
+    campo: "data",
+    erro: "data não é objeto do tipo Date",
+    valido: data instanceof Date,
+    valor: data,
+  };
 
-function valida({ data, descricao, valor, }, ...vs) {
+  const descricaoInvalida = {
+    campo: "descricao",
+    erro: "descricao não deve ser string vazia",
+    valido: !!descricao,
+    valor: descricao,
+  };
 
-    const dataInvalida =      { campo:  "data"
-                              , erro:   "data não é objeto do tipo Date"
-                              , valido: data instanceof Date
-                              , valor:  data
-                              };
+  const valorInvalido = {
+    campo: "valor",
+    erro: "valor deve ser positivo",
+    valido: valor > 0,
+    valor: valor,
+  };
 
-    const descricaoInvalida = { campo:  "descricao"
-                              , erro:   "descricao não deve ser string vazia"
-                              , valido: !!descricao
-                              , valor:  descricao
-                              };
+  let erros = [dataInvalida, descricaoInvalida, valorInvalido, ...vs].filter(
+    (x) => !x.valido
+  );
 
-    const valorInvalido =     { campo:  "valor"
-                              , erro:   "valor deve ser positivo"
-                              , valido: valor > 0
-                              , valor:  valor
-                              };
+  if (!erros.length) return null;
 
-    let erros = [ dataInvalida
-                , descricaoInvalida
-                , valorInvalido
-                , ...vs
-                ].filter(x => !x.valido);
-
-    if (!erros.length) return null;
-
-    return erros.reduce(function (a, { campo, ...info }) {
-        a[campo] = { ...info };
-        return a;
-    }, {});
-
+  return erros.reduce(function (a, { campo, ...info }) {
+    a[campo] = { ...info };
+    return a;
+  }, {});
 }
 
 async function destroy() {
-    try {
-        await q(`DROP TABLE IF EXISTS movimentacao`);
-    } catch (e) {
-        console.error(e);
-    }
+  try {
+    await q(`DROP TABLE IF EXISTS movimentacao`);
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 async function init() {
-
-    try {
-        await q(`CREATE TABLE IF NOT EXISTS movimentacao (
+  try {
+    await q(`CREATE TABLE IF NOT EXISTS movimentacao (
                     id         SERIAL,
                     descricao  VARCHAR(100) NOT NULL,
                     valor      DECIMAL(10,2) NOT NULL,
@@ -70,225 +68,269 @@ async function init() {
                     categoria  VARCHAR(20) CHECK (categoria IN ('ALIMENTACAO', 'SAUDE', 'MORADIA', 'TRANSPORTE', 'EDUCACAO', 'LAZER', 'IMPREVISTOS', 'OUTRAS')) DEFAULT 'OUTRAS',
                     PRIMARY KEY (id)
                  )`);
-    } catch (e) {
-        console.error(e);
-    }
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 async function selecionaDespesaPeriodo({ ano, mes }) {
-    const r = await q(`SELECT *
+  const r = await q(
+    `SELECT *
                         FROM   movimentacao
-                        WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'DESPESA'`
-                        , ano
-                        , mes);
+                        WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'DESPESA'`,
+    ano,
+    mes
+  );
 
-    return r.rows;
+  return r.rows;
 }
 
 async function selecionaDespesa({ descricao, id } = {}) {
-    if (id) {
-        const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`, id);
-        return r.rows[0] || null;
-    } else if (descricao) {
-        const r = await q(`SELECT *
+  if (id) {
+    const r = await q(
+      `SELECT * FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`,
+      id
+    );
+    return r.rows[0] || null;
+  } else if (descricao) {
+    const r = await q(
+      `SELECT *
                             FROM   movimentacao
-                            WHERE  tipo = 'DESPESA' AND descricao LIKE $1`
-                            , `%${descricao}%`); // ok, input string ainda será escapada pela biblioteca
+                            WHERE  tipo = 'DESPESA' AND descricao LIKE $1`,
+      `%${descricao}%`
+    ); // ok, input string ainda será escapada pela biblioteca
 
-        return r.rows;
-    } else {
-        const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
-        return r.rows;
-    }
+    return r.rows;
+  } else {
+    const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'DESPESA'`);
+    return r.rows;
+  }
 }
 
 async function selecionaReceita({ descricao, id } = {}) {
-
-    if (id) {
-        const r = await q("SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1", id);
-        if (r.rows[0]) {
-            const  { id, descricao, valor, data, ..._ } = r.rows[0] || {};
-            return { id, descricao, valor: parseFloat(valor), data };
-        }
-        return null;
-    } else if (descricao) {
-        const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao LIKE $1`, `%${descricao}%`);
-        return r.rows.map(function ({ id, descricao, valor, data }) {
-            return { id, descricao, valor: parseFloat(valor), data };
-        });
-    } else {
-        const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
-        return r.rows.map(function ({ id, descricao, valor, data }) {
-            return { id, descricao, valor: parseFloat(valor), data };
-        });
+  if (id) {
+    const r = await q(
+      "SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1",
+      id
+    );
+    if (r.rows[0]) {
+      const { id, descricao, valor, data, ..._ } = r.rows[0] || {};
+      return { id, descricao, valor: parseFloat(valor), data };
     }
-
+    return null;
+  } else if (descricao) {
+    const r = await q(
+      `SELECT * FROM movimentacao WHERE tipo = 'RECEITA' AND descricao LIKE $1`,
+      `%${descricao}%`
+    );
+    return r.rows.map(function ({ id, descricao, valor, data }) {
+      return { id, descricao, valor: parseFloat(valor), data };
+    });
+  } else {
+    const r = await q(`SELECT * FROM movimentacao WHERE tipo = 'RECEITA'`);
+    return r.rows.map(function ({ id, descricao, valor, data }) {
+      return { id, descricao, valor: parseFloat(valor), data };
+    });
+  }
 }
 
 async function selecionaReceitaPeriodo({ ano, mes }) {
-    const r = await q(`SELECT *
+  const r = await q(
+    `SELECT *
                         FROM   movimentacao
-                        WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'RECEITA'`
-                        , ano
-                        , mes);
+                        WHERE  EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2 AND tipo = 'RECEITA'`,
+    ano,
+    mes
+  );
 
-    return r.rows;
+  return r.rows;
 }
 
-async function atualizaDespesa({ categoria, data, descricao, frequencia, id, valor }) {
-    if (!id) {
-        return false;
-    } else {
-        const r = await q(`UPDATE movimentacao SET categoria   = $1,
+async function atualizaDespesa({
+  categoria,
+  data,
+  descricao,
+  frequencia,
+  id,
+  valor,
+}) {
+  if (!id) {
+    return false;
+  } else {
+    const r = await q(
+      `UPDATE movimentacao SET categoria   = $1,
                                                     data       = $2,
                                                     descricao  = $3,
                                                     frequencia = $4,
                                                     valor      = $5
                                 WHERE id = $6
-                                RETURNING *`
-                         , categoria
-                         , data
-                         , descricao
-                         , frequencia
-                         , valor
-                         , id);
+                                RETURNING *`,
+      categoria,
+      data,
+      descricao,
+      frequencia,
+      valor,
+      id
+    );
 
-        return !!r.rowCount;
-    }
+    return !!r.rowCount;
+  }
 }
 
 async function atualizaReceita({ id, ...info }) {
-    if (!id) {
-        return false;
-    } else {
-        const keys   = Object.keys(info);
+  if (!id) {
+    return false;
+  } else {
+    const keys = Object.keys(info);
 
-        const last   = keys.length + 1;
+    const last = keys.length + 1;
 
-        const params = keys.map(function (k, i) {
-                                    return `${k} = $${i + 1}`;
-                                })
-                           .join(", ");
+    const params = keys
+      .map(function (k, i) {
+        return `${k} = $${i + 1}`;
+      })
+      .join(", ");
 
-        const vals   = keys.map(k => info[k]);
-        const query = `UPDATE movimentacao SET ${params} WHERE tipo = 'RECEITA' AND id = $${last} RETURNING *`;
-        const r     = await q(query
-                             , ...vals
-                             , id);
+    const vals = keys.map((k) => info[k]);
+    const query = `UPDATE movimentacao SET ${params} WHERE tipo = 'RECEITA' AND id = $${last} RETURNING *`;
+    const r = await q(query, ...vals, id);
 
-        return !!r.rowCount;
-    }
+    return !!r.rowCount;
+  }
 }
 
 async function removeReceita({ id }) {
-    if (!id) return false;
+  if (!id) return false;
 
-    const r = await q(`DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1`
-                        , id);
+  const r = await q(
+    `DELETE FROM movimentacao WHERE tipo = 'RECEITA' AND id = $1`,
+    id
+  );
 
-    return !!r.rowCount;
+  return !!r.rowCount;
 }
 
 async function removeDespesa({ id }) {
-    if (!id) return false;
+  if (!id) return false;
 
-    const r = await q(`DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`
-                     , id);
+  const r = await q(
+    `DELETE FROM movimentacao WHERE tipo = 'DESPESA' AND id = $1`,
+    id
+  );
 
-    return !!r.rowCount;
+  return !!r.rowCount;
 }
 
 async function cadastraReceita({ data, descricao, valor }) {
-    const erros = valida({ data, descricao, valor });
+  const erros = valida({ data, descricao, valor });
 
-    if (erros) return erros;
+  if (erros) return erros;
 
-    const tipo = RECEITA;
+  const tipo = RECEITA;
 
-    const r = await q(`INSERT INTO movimentacao(categoria, data, descricao, tipo, valor) VALUES ('OUTRAS', $1, $2, $3, $4) RETURNING data, descricao, id, valor`
-                        , data
-                        , descricao
-                        , tipo
-                        , valor);
+  const r = await q(
+    `INSERT INTO movimentacao(categoria, data, descricao, tipo, valor) VALUES ('OUTRAS', $1, $2, $3, $4) RETURNING data, descricao, id, valor`,
+    data,
+    descricao,
+    tipo,
+    valor
+  );
 
-    return r.rows[0];
+  return r.rows[0];
 }
 
-async function cadastraDespesa({ categoria, data, descricao, frequencia, valor } = { frequencia: EVENTUAL }) {
-    const f = frequencia || EVENTUAL;
-    const c = categoria  || OUTRAS;
-    const categoriaInvalida = { campo:  "categoria"
-                              , erro:   `categoria não possui valor correto: ${categorias.join(" | ")}`
-                              , valido: categorias.includes(c)
-                              , valor:  c
-                              };
+async function cadastraDespesa(
+  { categoria, data, descricao, frequencia, valor } = { frequencia: EVENTUAL }
+) {
+  const f = frequencia || EVENTUAL;
+  const c = categoria || OUTRAS;
+  const categoriaInvalida = {
+    campo: "categoria",
+    erro: `categoria não possui valor correto: ${categorias.join(" | ")}`,
+    valido: categorias.includes(c),
+    valor: c,
+  };
 
-    const frequenciaInvalida = { campo:  "frequencia"
-                               , erro:   "frequência não possui valor correto: FIXA | EVENTUAL "
-                               , valido: f === FIXA || f === EVENTUAL
-                               , valor:  f
-                               };
+  const frequenciaInvalida = {
+    campo: "frequencia",
+    erro: "frequência não possui valor correto: FIXA | EVENTUAL ",
+    valido: f === FIXA || f === EVENTUAL,
+    valor: f,
+  };
 
-    const erros = valida({ data, descricao, valor }, frequenciaInvalida, categoriaInvalida);
+  const erros = valida(
+    { data, descricao, valor },
+    frequenciaInvalida,
+    categoriaInvalida
+  );
 
-    if (erros) return erros;
+  if (erros) return erros;
 
-    const tipo  = DESPESA;
+  const tipo = DESPESA;
 
-    const r = await q(`INSERT INTO movimentacao (categoria, data, descricao, tipo, valor, frequencia)
+  const r = await q(
+    `INSERT INTO movimentacao (categoria, data, descricao, tipo, valor, frequencia)
                             VALUES($1, $2, $3, $4, $5, $6)
-                            RETURNING categoria, data, descricao, frequencia, id, valor`
-                     , c
-                     , data
-                     , descricao
-                     , tipo
-                     , valor
-                     , f);
+                            RETURNING categoria, data, descricao, frequencia, id, valor`,
+    c,
+    data,
+    descricao,
+    tipo,
+    valor,
+    f
+  );
 
-    return r.rows[0];
+  return r.rows[0];
 }
 
 async function resumoMovimentacao({ ano, mes }) {
-
-    const r = await q(`SELECT tipo, SUM(valor) total, categoria
+  const r = await q(
+    `SELECT tipo, SUM(valor) total, categoria
                        FROM movimentacao
                        WHERE EXTRACT(YEAR FROM data) = $1 AND EXTRACT(MONTH FROM data) = $2
                        GROUP BY categoria, tipo
-                       ORDER BY tipo DESC`
-                     , ano
-                     , mes);
+                       ORDER BY tipo DESC`,
+    ano,
+    mes
+  );
 
-    const { rows }      = r;
-    const gastos        = rows.filter(m => m.tipo === DESPESA);
-    const totalDespesas = gastos.reduce((t, { total: v }) => parseFloat(v) + t, 0);
+  const { rows } = r;
+  const gastos = rows.filter((m) => m.tipo === DESPESA);
+  const totalDespesas = gastos.reduce(
+    (t, { total: v }) => parseFloat(v) + t,
+    0
+  );
 
-    const [receitas]    = rows.filter(m => m.tipo === RECEITA);
-    const totalReceitas = receitas ? parseFloat(receitas.total) : 0;
+  const [receitas] = rows.filter((m) => m.tipo === RECEITA);
+  const totalReceitas = receitas ? parseFloat(receitas.total) : 0;
 
-    const detalhamento  = gastos.reduce((o, { categoria, total }) => ({ ...o, [categoria]: total }), {});
+  const detalhamento = gastos.reduce(
+    (o, { categoria, total }) => ({ ...o, [categoria]: total }),
+    {}
+  );
 
-    const resumo = { despesas: { ...GASTOS
-                               , ...detalhamento
-                               }
-                   , saldo: totalReceitas - totalDespesas
-                   , totalReceitas
-                   , totalDespesas
-                   };
+  const resumo = {
+    despesas: { ...GASTOS, ...detalhamento },
+    saldo: totalReceitas - totalDespesas,
+    totalReceitas,
+    totalDespesas,
+  };
 
-    return resumo;
+  return resumo;
 }
 
-export default { atualizaDespesa
-               , atualizaReceita
-               , cadastraDespesa
-               , cadastraReceita
-               , destroy
-               , init
-               , removeDespesa
-               , removeReceita
-               , resumoMovimentacao
-               , selecionaDespesa
-               , selecionaDespesaPeriodo
-               , selecionaReceita
-               , selecionaReceitaPeriodo
-               }
+export default {
+  atualizaDespesa,
+  atualizaReceita,
+  cadastraDespesa,
+  cadastraReceita,
+  destroy,
+  init,
+  removeDespesa,
+  removeReceita,
+  resumoMovimentacao,
+  selecionaDespesa,
+  selecionaDespesaPeriodo,
+  selecionaReceita,
+  selecionaReceitaPeriodo,
+};

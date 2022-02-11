@@ -1,4 +1,4 @@
 const EVENTUAL = "EVENTUAL";
-const FIXA     = "FIXA";
+const FIXA = "FIXA";
 
-export { EVENTUAL, FIXA }
+export { EVENTUAL, FIXA };
